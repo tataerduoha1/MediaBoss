@@ -1,6 +1,6 @@
-﻿/** 播放器：自定义控制栏、雪碧图悬停预览、进度记忆、mpv 外放、截图、触屏与快捷键。 */
-import { api } from "../api.js?v=4";
-import { h, toast, fmtDur, modal } from "../util.js?v=4";
+/** 播放器：自定义控制栏、雪碧图悬停预览、进度记忆、mpv 外放、截图、触屏与快捷键。 */
+import { api } from "../api.js?v=6";
+import { h, toast, fmtDur, modal } from "../util.js?v=6";
 
 export async function render(root, params) {
   const vid = params[1];
@@ -48,6 +48,7 @@ export async function render(root, params) {
   const fsBtn = h("button", { class: "pb", title: "全屏 (F)" }, "⛶");
   const pipBtn = h("button", { class: "pb", title: "画中画 (P)" }, "PiP");
   const helpBtn = h("button", { class: "pb", title: "快捷键帮助 (?)" }, "⌨");
+  let ccBtn = null; // 字幕按钮（A3，检测到字幕文件时注入）
 
   const btnBar = h("div", { class: "p-btns" },
     playBtn, back10, fwd10, timeLabel,
@@ -121,6 +122,28 @@ export async function render(root, params) {
     ctx.drawImage(spriteImg, col * tw, row * th, tw, th, 0, 0, spriteCanvas.width, spriteCanvas.height);
     spriteTime.textContent = fmtDur(t);
   }
+
+  /* ---- A3 字幕：同目录 srt/ass/ssa/vtt 自动转 vtt ---- */
+  fetch(`/api/videos/${vid}/subtitle`).then((r) => r.ok ? r.blob() : null).then((blob) => {
+    if (!blob) return;
+    const track = document.createElement("track");
+    track.kind = "subtitles";
+    track.label = "字幕";
+    track.default = true;
+    track.src = URL.createObjectURL(blob);
+    video.append(track);
+    ccBtn = h("button", { class: "pb on", title: "字幕开关 (C)" }, "CC");
+    const toggleCc = () => {
+      const tt = video.textTracks[0];
+      if (!tt) return;
+      const show = tt.mode !== "showing";
+      tt.mode = show ? "showing" : "hidden";
+      ccBtn.classList.toggle("on", show);
+    };
+    ccBtn.addEventListener("click", toggleCc);
+    btnBar.insertBefore(ccBtn, pipBtn);
+    setTimeout(() => { try { video.textTracks[0].mode = "showing"; } catch { /* ignore */ } }, 0);
+  }).catch(() => { /* 无字幕文件，静默 */ });
 
   /* ---- 进度条交互：拖动只预览，松手才跳转（避免拖动卡顿）---- */
   let seeking = false;      // 鼠标/触摸拖动中
@@ -294,6 +317,7 @@ export async function render(root, params) {
         ["F", "全屏切换"],
         ["M", "静音"],
         ["P", "画中画"],
+        ["C", "字幕开关（有字幕文件时）"],
         ["Esc", "退出全屏 / 返回"],
         ["双击画面左侧 / 右侧", "快退 / 快进 10 秒"],
         ["双击画面中间", "全屏切换"],
@@ -323,6 +347,7 @@ export async function render(root, params) {
       case "f": case "F": toggleFs(); break;
       case "m": case "M": muteBtn.click(); break;
       case "p": case "P": pipBtn.click(); break;
+      case "c": case "C": ccBtn?.click(); break;
       case "?": showHelp(); break;
       case "Escape":
         if (document.fullscreenElement) document.exitFullscreen?.();

@@ -173,6 +173,35 @@ MIGRATIONS = [
     DROP INDEX IF EXISTS idx_history_video;
     CREATE UNIQUE INDEX IF NOT EXISTS idx_history_video_uniq ON watch_history(video_id);
     """,
+    # 4: 片单/合集 + 播放流水（年度报告/热力日历数据源；由 watch_history 现有记录播种）
+    """
+    CREATE TABLE IF NOT EXISTS collections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        cover_video_id INTEGER,
+        sort INTEGER NOT NULL DEFAULT 0,
+        created_at REAL NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS collection_items (
+        collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+        video_id INTEGER NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+        added_at REAL NOT NULL,
+        UNIQUE(collection_id, video_id)
+    );
+    CREATE TABLE IF NOT EXISTS play_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        video_id INTEGER NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
+        started_at REAL NOT NULL,
+        seconds REAL NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_playlog_started ON play_log(started_at);
+    CREATE INDEX IF NOT EXISTS idx_playlog_video ON play_log(video_id);
+    CREATE INDEX IF NOT EXISTS idx_coll_items_coll ON collection_items(collection_id);
+    INSERT INTO play_log(video_id, started_at, seconds)
+        SELECT video_id, started_at, seconds FROM watch_history WHERE video_id NOT IN
+        (SELECT video_id FROM play_log);
+    """,
 ]
 
 
@@ -292,6 +321,9 @@ DEFAULT_SETTINGS = {
     "organize_enabled": "0",
     "hide_watched": "0",
     "page_size": "60",
+    "accent_color": "",                   # A10 主题强调色，空=默认粉
+    "wallpaper": "",                      # A10 背景壁纸 URL/路径，空=纯色
+    "lang": "zh",                         # A10 界面语言 zh / en
 }
 
 

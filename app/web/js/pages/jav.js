@@ -1,7 +1,7 @@
-﻿/** JAV 库：封面墙 + 多维筛选（女优/厂商/系列/类别）+ 列表与详情 */
-import { api } from "../api.js?v=4";
-import { h, debounce, toast, confirmModal, promptModal, fmtDur, fmtSize, fmtAgo, stars, lazyimg, pageMem } from "../util.js?v=4";
-import { javCard, pager, skeletonGrid, emptyState, ratingStars, favBtn } from "../components.js?v=4";
+/** JAV 库：封面墙 + 多维筛选（女优/厂商/系列/类别）+ 列表与详情 */
+import { api } from "../api.js?v=6";
+import { h, debounce, toast, confirmModal, promptModal, modal, fmtDur, fmtSize, fmtAgo, stars, lazyimg, pageMem } from "../util.js?v=6";
+import { javCard, pager, skeletonGrid, emptyState, ratingStars, favBtn } from "../components.js?v=6";
 
 export async function render(view, params, query) {
   document.title = "JAV 库 · MediaBoss";
@@ -181,10 +181,99 @@ function buildDetail(j, v, related, holder) {
     },
   }, "✏️ 编辑");
 
+  /* ---- A2 自选海报：8 等分抽帧 ---- */
+  const coverBox = j.cover_url ? lazyimg(j.cover_url, j.code)
+    : h("div", { class: "ph", style: "aspect-ratio:2/2.85;display:grid;place-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--faint);font-size:40px" }, "🎞");
+  const pickPoster = () => {
+    modal((box, close) => {
+      box.append(h("h3", { style: "margin-top:0" }, "🖼 自选海报"),
+        h("p", { class: "mut", style: "margin:0 0 12px;font-size:12.5px" },
+          "按时长 8 等分抽帧，点击一帧即设为封面（Emby/Kodi 导出也使用此封面）"));
+      const grid = h("div", { class: "poster-picker" });
+      for (let i = 0; i < 8; i++) {
+        const cell = h("button", { class: "pf", title: `第 ${i + 1} 帧` });
+        cell.append(lazyimg(`/api/videos/${v.id}/frames/${i}?n=8&_p${i}`, `frame-${i}`));
+        cell.addEventListener("click", async () => {
+          cell.disabled = true; cell.style.opacity = ".5";
+          try {
+            const r = await api.post(`/videos/${v.id}/poster`, { n: 8, idx: i });
+            toast("海报已更新", "ok", 1500);
+            close();
+            if (coverBox.tagName === "IMG") coverBox.src = r.poster_url;
+            else renderDetail(holder.closest(".view") || holder.parentElement, { 1: j.id });
+          } catch (e) { toast(e.message, "err"); cell.disabled = false; cell.style.opacity = ""; }
+        });
+        grid.append(cell);
+      }
+      box.append(grid, h("div", { class: "acts" },
+        h("button", {
+          class: "btn", onclick: async () => {
+            try {
+              await api.del(`/videos/${v.id}/poster`);
+              toast("已恢复默认封面", "ok", 1500);
+              close();
+              if (coverBox.tagName === "IMG") coverBox.src = `/api/videos/${v.id}/cover?t=${Date.now()}`;
+              else renderDetail(holder.closest(".view") || holder.parentElement, { 1: j.id });
+            } catch (e) { toast(e.message, "err"); }
+          },
+        }, "恢复默认封面"),
+        h("button", { class: "btn primary", onclick: close }, "完成")));
+    });
+  };
+
+  /* ---- A9 加入片单 ---- */
+  const pickCollection = () => {
+    modal(async (box, close) => {
+      box.append(h("h3", { style: "margin-top:0" }, "📋 加入片单"));
+      const listWrap = h("div", { class: "coll-pick" }, "加载中…");
+      box.append(listWrap, h("div", { class: "acts" },
+        h("button", { class: "btn primary", onclick: close }, "完成")));
+      try {
+        const [all, mine] = await Promise.all([
+          api.get("/collections"), api.get(`/videos/${v.id}/collections`)]);
+        const memberIds = new Set(mine.ids);
+        const newInput = h("input", { class: "input", placeholder: "输入名称回车，新建片单并加入" });
+        listWrap.replaceChildren(
+          ...all.items.map((c) => {
+            const cb = h("input", { type: "checkbox" });
+            cb.checked = memberIds.has(c.id);
+            cb.addEventListener("change", async () => {
+              try {
+                if (cb.checked) await api.post(`/collections/${c.id}/items`, { video_id: v.id });
+                else await api.del(`/collections/${c.id}/items/${v.id}`);
+              } catch (e) { toast(e.message, "err"); cb.checked = !cb.checked; }
+            });
+            return h("label", { class: "coll-row" }, cb,
+              h("span", { class: "nm" }, c.name),
+              h("span", { class: "mut" }, `${c.count} 部`));
+          }),
+          newInput);
+        if (!all.items.length) {
+          listWrap.insertBefore(h("p", { class: "mut", style: "font-size:12.5px;margin:0 0 8px" },
+            "还没有片单，在下方输入名称创建第一个："), newInput);
+        }
+        newInput.addEventListener("keydown", async (e) => {
+          if (e.key === "Enter" && newInput.value.trim()) {
+            try {
+              const r = await api.post("/collections", { name: newInput.value.trim() });
+              await api.post(`/collections/${r.id}/items`, { video_id: v.id });
+              toast(`已创建「${r.name}」并加入`, "ok");
+              close();
+            } catch (err) { toast(err.message, "err"); }
+          }
+        });
+        if (all.items.length) setTimeout(() => newInput.focus(), 60);
+      } catch (e) { listWrap.replaceChildren(h("span", { class: "mut" }, e.message)); }
+    });
+  };
+
   const wrap = h("div", {},
     h("div", { class: "detail" },
       h("div", { class: "cover-col" },
-        j.cover_url ? lazyimg(j.cover_url, j.code) : h("div", { class: "ph", style: "aspect-ratio:2/2.85;display:grid;place-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--faint);font-size:40px" }, "🎞")),
+        coverBox,
+        h("div", { class: "cover-acts" },
+          h("button", { class: "btn sm", onclick: pickPoster, title: "从视频抽帧自选封面" }, "🖼 自选海报"),
+          h("button", { class: "btn sm", onclick: pickCollection, title: "加入/移出片单" }, "📋 加入片单"))),
       h("div", { class: "info-col" },
         h("div", { class: "code" }, j.code),
         h("h1", { class: "title" }, j.title || "(未刮削到标题)"),

@@ -6,7 +6,7 @@ import xml.sax.saxutils as sx
 
 from .. import config, db, util
 from ..httpd import ApiError, Response, json_ok, router
-from ..services import ffmpegtool, mpv, organize as organizer, thumbs
+from ..services import ffmpegtool, mpv, organize as organizer, subtitles, thumbs
 
 PLAYABLE = {".mp4": "video/mp4", ".webm": "video/webm", ".m4v": "video/mp4",
             ".mkv": "video/x-matroska", ".ts": "video/mp2t", ".mov": "video/quicktime"}
@@ -81,6 +81,22 @@ def list_videos(req):
     })
 
 
+@router.get("/videos/random-one")
+def random_one(req):
+    """幸运骰子：随机挑一部（B3）。可带 watched=0 过滤只看未看。"""
+    where, vals = ["1=1"], []
+    if req.query.get("watched") == "0":
+        where.append("v.watched=0")
+    base = "FROM videos v LEFT JOIN jav j ON j.video_id=v.id WHERE " + " AND ".join(where)
+    row = db.db().query_one(
+        f"SELECT v.id, j.code, j.cn_title, j.title AS jtitle, v.title {base}"
+        " ORDER BY RANDOM() LIMIT 1", vals)
+    if not row:
+        raise ApiError(404, "库里还没有视频")
+    return json_ok({"id": row["id"], "code": row.get("code") or "",
+                    "title": row.get("cn_title") or row.get("jtitle") or row["title"]})
+
+
 def _slim(r: dict) -> dict:
     return {
         "id": r["id"], "filename": r["filename"], "title": r["title"], "ext": r["ext"],
@@ -151,7 +167,8 @@ def stream_video(req):
 @router.get("/videos/{vid}/thumbnail")
 def thumbnail(req):
     vid = int(req.params["vid"])
-    p = thumbs.find_thumb(vid)
+    # 自定义海报（A2 海报自选）优先作为缩略图，与封面保持一致
+    p = thumbs.custom_poster(vid) or thumbs.find_thumb(vid)
     if not p:
         raise ApiError(404, "缩略图未生成")
     with open(p, "rb") as f:
@@ -175,12 +192,27 @@ def cover(req):
     if jav and jav["cover_path"] and os.path.isfile(jav["cover_path"]):
         with open(jav["cover_path"], "rb") as f:
             return Response(200, f.read(), "image/jpeg", {"Cache-Control": "public, max-age=86400"})
-    # 刮削封面缺失时回退视频帧海报（ffmpeg 从视频 10% 处抽取），刮削成功后自动被真封面替代
-    p = thumbs.find_thumb(vid)
+    # 自定义海报 > 刮削封面缺失时回退视频帧海报（ffmpeg 从视频 10% 处抽取）
+    p = thumbs.custom_poster(vid) or thumbs.find_thumb(vid)
     if p:
         with open(p, "rb") as f:
             return Response(200, f.read(), "image/jpeg", {"Cache-Control": "public, max-age=86400"})
     raise ApiError(404, "封面不存在")
+
+
+@router.get("/videos/{vid}/subtitle")
+def subtitle(req):
+    """外挂字幕转 WebVTT 返回（A3）；无字幕返回 404。"""
+    vid = int(req.params["vid"])
+    v = _get_video(vid)
+    path = subtitles.find_subtitle(v["path"])
+    if not path:
+        raise ApiError(404, "未找到外挂字幕")
+    text = subtitles.to_vtt(path)
+    if not text:
+        raise ApiError(422, "字幕解析失败")
+    return Response(200, text.encode("utf-8"), "text/vtt; charset=utf-8",
+                    {"Cache-Control": "no-cache", "Access-Control-Allow-Origin": "*"})
 
 
 @router.post("/videos/{vid}/progress")
@@ -209,6 +241,10 @@ def progress(req):
             "INSERT INTO watch_history(video_id, started_at, seconds) VALUES(?,?,?)"
             " ON CONFLICT(video_id) DO UPDATE SET started_at=excluded.started_at, seconds=excluded.seconds",
             (vid, time.time(), pos if dur > 0 else 0))
+    if started:
+        # 播放流水：每次开始播放记录一条（年度报告 / 热力日历数据源，B1/B2）
+        d.execute("INSERT INTO play_log(video_id, started_at, seconds) VALUES(?,?,?)",
+                  (vid, time.time(), 0))
     return json_ok()
 
 

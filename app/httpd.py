@@ -160,7 +160,8 @@ class Router:
 router = Router()
 
 # 注册各 API 模块（在导入时装饰路由）
-from .api import auth, data, directories, downloads, entities, jav, settings_api, system, tasks, updates, videos  # noqa: E402,F401
+from .api import (auth, collections, data, directories, downloads, entities, insights,  # noqa: E402,F401
+                  jav, settings_api, system, tasks, tools, updates, videos)
 
 
 def handle_api(req: Request) -> Response:

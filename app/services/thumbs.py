@@ -38,6 +38,12 @@ def find_sprite(video_id: int) -> str | None:
     return p if os.path.isfile(p) else None
 
 
+def custom_poster(video_id: int) -> str | None:
+    """A2 海报自选：用户指定的自定义海报（优先于抓帧缩略图）。"""
+    p = os.path.join(config.cfg().thumb_dir, "custom", f"v{video_id}.jpg")
+    return p if os.path.isfile(p) else None
+
+
 def enqueue(video_id: int):
     """将视频加入缩略图生成队列（幂等）。"""
     row = db.db().query_one("SELECT thumb_status FROM videos WHERE id=?", (video_id,))

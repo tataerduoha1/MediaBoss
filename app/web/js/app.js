@@ -1,16 +1,19 @@
-﻿/** 应用入口：hash 路由 + 布局 + 启动引导。 */
-import { api } from "./api.js?v=4";
-import { h, toast, applyTheme } from "./util.js?v=4";
-import { openUpdateDialog } from "./update.js?v=4";
-import * as Login from "./pages/login.js?v=4";
-import * as Dashboard from "./pages/dashboard.js?v=4";
-import * as Videos from "./pages/videos.js?v=4";
-import * as Jav from "./pages/jav.js?v=4";
-import * as Entities from "./pages/entities.js?v=4";
-import * as Player from "./pages/player.js?v=4";
-import * as History from "./pages/history.js?v=4";
-import * as Downloads from "./pages/downloads.js?v=4";
-import * as Settings from "./pages/settings.js?v=4";
+/** 应用入口：hash 路由 + 布局 + 启动引导。 */
+import { api } from "./api.js?v=6";
+import { h, toast, modal, applyTheme, applyAccent, applyWallpaper, applyLang, t, debounce } from "./util.js?v=6";
+import { openUpdateDialog } from "./update.js?v=6";
+import * as Login from "./pages/login.js?v=6";
+import * as Dashboard from "./pages/dashboard.js?v=6";
+import * as Videos from "./pages/videos.js?v=6";
+import * as Jav from "./pages/jav.js?v=6";
+import * as Entities from "./pages/entities.js?v=6";
+import * as Player from "./pages/player.js?v=6";
+import * as History from "./pages/history.js?v=6";
+import * as Downloads from "./pages/downloads.js?v=6";
+import * as Collections from "./pages/collections.js?v=6";
+import * as Insights from "./pages/insights.js?v=6";
+import * as Tools from "./pages/tools.js?v=6";
+import * as Settings from "./pages/settings.js?v=6";
 
 window.__BOOT_OK = "static-ok"; // 诊断标记：模块图加载成功即设置
 
@@ -24,6 +27,10 @@ const ROUTES = [
   { re: /^\/jav\/(\d+)$/, mod: Jav, fn: "renderDetail", title: "详情" },
   { re: /^\/(actresses|studios|series|genres)$/, mod: Entities, title: "演员与厂商" },
   { re: /^\/player\/(\d+)$/, mod: Player, bare: true, title: "播放" },
+  { re: /^\/collections$/, mod: Collections, title: "片单" },
+  { re: /^\/collections\/(\d+)$/, mod: Collections, fn: "renderDetail", title: "片单详情" },
+  { re: /^\/insights$/, mod: Insights, title: "观影统计" },
+  { re: /^\/tools$/, mod: Tools, title: "工具箱" },
   { re: /^\/history$/, mod: History, title: "观看历史" },
   { re: /^\/downloads$/, mod: Downloads, title: "下载" },
   { re: /^\/settings$/, mod: Settings, title: "设置" },
@@ -45,28 +52,34 @@ function parseHash() {
 
 export function nav(to) { location.hash = to; }
 
+const navItem = (href, key, icon) => h("a", { href, "data-nav": href.replace("#", "").split("?")[0] },
+  h("span", { class: "ico" }, icon), h("span", { "data-i18n": key }, t(key)));
+
 function buildLayout() {
   const sidebar = h("aside", { class: "sidebar", id: "sidebar" },
     h("div", { class: "logo" }, h("span", { class: "mark" }, "▶"), "MediaBoss"),
     h("nav", { class: "nav" },
-      h("a", { href: "#/", "data-nav": "/" }, h("span", { class: "ico" }, "📊"), "仪表盘"),
-      h("div", { class: "group" }, "媒体库"),
-      h("a", { href: "#/videos", "data-nav": "/videos" }, h("span", { class: "ico" }, "🎬"), "视频库"),
-      h("a", { href: "#/jav", "data-nav": "/jav" }, h("span", { class: "ico" }, "💋"), "JAV 库"),
-      h("a", { href: "#/actresses", "data-nav": "/actresses" }, h("span", { class: "ico" }, "👩" ), "女优"),
-      h("a", { href: "#/studios", "data-nav": "/studios" }, h("span", { class: "ico" }, "🏢"), "厂商"),
-      h("a", { href: "#/series", "data-nav": "/series" }, h("span", { class: "ico" }, "📚"), "系列"),
-      h("a", { href: "#/genres", "data-nav": "/genres" }, h("span", { class: "ico" }, "🏷"), "类别"),
-      h("div", { class: "group" }, "其他"),
-      h("a", { href: "#/history", "data-nav": "/history" }, h("span", { class: "ico" }, "🕘"), "观看历史"),
-      h("a", { href: "#/downloads", "data-nav": "/downloads" }, h("span", { class: "ico" }, "⬇️"), "下载"),
-      h("a", { href: "#/settings", "data-nav": "/settings" }, h("span", { class: "ico" }, "⚙️"), "设置"),
+      navItem("#/", "nav.dashboard", "📊"),
+      h("div", { class: "group", "data-i18n": "group.library" }, t("group.library")),
+      navItem("#/videos", "nav.videos", "🎬"),
+      navItem("#/jav", "nav.jav", "💋"),
+      navItem("#/actresses", "nav.actresses", "👩"),
+      navItem("#/studios", "nav.studios", "🏢"),
+      navItem("#/series", "nav.series", "📚"),
+      navItem("#/genres", "nav.genres", "🏷"),
+      navItem("#/collections", "nav.collections", "📋"),
+      h("div", { class: "group", "data-i18n": "group.other" }, t("group.other")),
+      navItem("#/insights", "nav.insights", "📈"),
+      navItem("#/tools", "nav.tools", "🧰"),
+      navItem("#/history", "nav.history", "🕘"),
+      navItem("#/downloads", "nav.downloads", "⬇️"),
+      navItem("#/settings", "nav.settings", "⚙️"),
     ),
     h("div", { class: "foot" }, "MediaBoss · 本地媒体管家"),
   );
 
   const searchInput = h("input", {
-    type: "text", placeholder: "搜索番号 / 标题 / 文件名…", id: "global-search",
+    type: "text", placeholder: t("search.placeholder"), id: "global-search",
   });
   searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && searchInput.value.trim()) {
@@ -76,11 +89,28 @@ function buildLayout() {
   });
 
   const pill = h("span", { class: "task-pill", id: "task-pill", title: "后台任务" },
-    h("span", { class: "dot" }), h("span", { class: "txt" }, "空闲"));
+    h("span", { class: "dot" }), h("span", { class: "txt" }, t("task.idle")));
   pill.addEventListener("click", openUpdateDialog);
 
-  const updBtn = h("button", { class: "btn sm", id: "upd-btn", title: "扫描目录并更新媒体库元数据" }, "🔄 更新");
+  const updBtn = h("button", { class: "btn sm", id: "upd-btn", title: "扫描目录并更新媒体库元数据" },
+    h("span", { "data-i18n": "act.update" }, t("act.update")), " 🔄");
   updBtn.addEventListener("click", openUpdateDialog);
+
+  /* 幸运骰子：随机播一部（优先未看） */
+  const diceBtn = h("button", { class: "btn sm", id: "dice-btn", title: "🎲 幸运骰子：随机播放一部（优先未看）" }, "🎲");
+  diceBtn.addEventListener("click", async () => {
+    diceBtn.disabled = true;
+    try {
+      const r = await api.get("/videos/random-one?watched=0");
+      nav(`/player/${r.id}`);
+    } catch {
+      try {
+        const r = await api.get("/videos/random-one");
+        nav(`/player/${r.id}`);
+      } catch (e2) { toast(e2.message, "err"); }
+    }
+    diceBtn.disabled = false;
+  });
 
   const burger = h("button", { class: "burger", onclick: () => sidebar.classList.toggle("open") }, "☰");
   const scrim = h("div", { class: "scrim", style: "display:none" });
@@ -89,7 +119,7 @@ function buildLayout() {
     if (e.target.closest("a")) { sidebar.classList.remove("open"); scrim.style.display = "none"; }
   });
 
-  const logout = h("button", { class: "btn ghost sm", title: "退出登录" }, "退出");
+  const logout = h("button", { class: "btn ghost sm", title: "退出登录" }, h("span", { "data-i18n": "act.logout" }, t("act.logout")));
   logout.addEventListener("click", async () => {
     try { await api.post("/auth/logout"); } catch { /* ignore */ }
     location.hash = "#/login";
@@ -100,6 +130,7 @@ function buildLayout() {
     h("div", { class: "searchbox" },
       h("span", { class: "s-ico" }, "🔍"), searchInput, h("kbd", {}, "/")),
     h("div", { class: "spacer" }),
+    diceBtn,
     updBtn,
     pill,
     logout,
@@ -108,9 +139,12 @@ function buildLayout() {
   const view = h("div", { class: "view", id: "view" });
   const layout = h("div", { class: "layout" }, sidebar, scrim, h("div", { class: "main" }, topbar, view));
 
-  // 快捷键：/ 聚焦搜索
+  // 快捷键：/ 聚焦搜索；Ctrl/⌘+K 命令面板
   document.addEventListener("keydown", (e) => {
-    if (e.key === "/" && document.activeElement?.tagName !== "INPUT"
+    if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      openPalette();
+    } else if (e.key === "/" && document.activeElement?.tagName !== "INPUT"
         && document.activeElement?.tagName !== "TEXTAREA" && !e.target.isContentEditable) {
       e.preventDefault();
       searchInput.focus();
@@ -119,7 +153,64 @@ function buildLayout() {
   return { layout, view, pill };
 }
 
+/* ============ Ctrl+K 命令面板 ============ */
+function openPalette() {
+  const pages = [
+    ["📊", "#/", "nav.dashboard"], ["🎬", "#/videos", "nav.videos"], ["💋", "#/jav", "nav.jav"],
+    ["👩", "#/actresses", "nav.actresses"], ["🏢", "#/studios", "nav.studios"],
+    ["📚", "#/series", "nav.series"], ["🏷", "#/genres", "nav.genres"],
+    ["📋", "#/collections", "nav.collections"], ["📈", "#/insights", "nav.insights"],
+    ["🧰", "#/tools", "nav.tools"], ["🕘", "#/history", "nav.history"],
+    ["⬇️", "#/downloads", "nav.downloads"], ["⚙️", "#/settings", "nav.settings"],
+  ];
+  const staticItems = pages.map(([icon, to, key]) => ({ icon, to, label: t(key) }));
+  modal((box, close) => {
+    const input = h("input", { class: "input", placeholder: "搜索影片 / 跳转页面…（↑↓ 选择，Enter 打开）" });
+    const list = h("div", { class: "cmd-list" });
+    box.append(h("h3", { style: "margin-top:0" }, "⌘ 快速跳转"), input, list);
+    let items = staticItems;
+    let sel = 0;
+    const render = () => {
+      list.replaceChildren(...items.map((it, i) =>
+        h("div", { class: "cmd-item" + (i === sel ? " on" : ""), onclick: () => go(i) },
+          h("span", { class: "ico" }, it.icon),
+          h("span", { class: "lb" }, it.label),
+          it.sub ? h("span", { class: "sub" }, it.sub) : null)));
+    };
+    const go = (i) => { const it = items[i]; if (!it) return; close(); nav(it.to); };
+    const doSearch = debounce(async () => {
+      const q = input.value.trim();
+      if (!q) { items = staticItems; sel = 0; render(); return; }
+      const enc = encodeURIComponent(q);
+      const [jr, vr] = await Promise.all([
+        api.get(`/jav?q=${enc}&page_size=6`).catch(() => null),
+        api.get(`/videos?q=${enc}&page_size=4`).catch(() => null),
+      ]);
+      items = [
+        ...(jr?.items || []).map((j) => ({
+          icon: "💋", to: `#/jav/${j.id}`, sub: j.code,
+          label: j.cn_title || j.title || j.code,
+        })),
+        ...(vr?.items || []).map((v) => ({
+          icon: "🎬", to: `#/player/${v.id}`, sub: v.code || "",
+          label: v.title || v.filename,
+        })),
+      ];
+      sel = 0; render();
+    }, 250);
+    input.addEventListener("input", doSearch);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(items.length - 1, sel + 1); render(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(0, sel - 1); render(); }
+      else if (e.key === "Enter") { e.preventDefault(); go(sel); }
+    });
+    render();
+    setTimeout(() => input.focus(), 30);
+  });
+}
+
 async function refreshTaskPill(pill) {
+  if (!pill) return; // bare 路由（播放页等）无 task pill
   try {
     const s = await api.get("/tasks/status");
     const busy = s.scan?.running || s.scrape?.running || (s.scrape?.queue || 0) > 0 || (s.thumb_queue || 0) > 0;
@@ -128,7 +219,7 @@ async function refreshTaskPill(pill) {
     if (s.scan?.running) parts.push("扫描中");
     if (s.scrape?.running || s.scrape?.queue > 0) parts.push(`刮削 ${s.scrape.queue || 0}`);
     if (s.thumb_queue > 0) parts.push(`缩略图 ${s.thumb_queue}`);
-    pill.querySelector(".txt").textContent = busy ? parts.join(" · ") : "空闲";
+    pill.querySelector(".txt").textContent = busy ? parts.join(" · ") : t("task.idle");
   } catch { /* 静默 */ }
 }
 
@@ -215,9 +306,12 @@ window.addEventListener("hashchange", route);
   if (!location.hash) location.hash = "#/";
   try {
     await api.get("/stats");
-    try {  // 应用服务器端主题设置（本地缓存优先，避免闪烁）
+    try {  // 应用服务器端外观设置（本地缓存优先，避免闪烁）
       const s = await api.get("/settings");
       applyTheme(localStorage.getItem("mb_theme") || s.theme || "dark");
+      applyAccent(localStorage.getItem("mb_accent") || s.accent_color || "");
+      applyWallpaper(localStorage.getItem("mb_wallpaper") || s.wallpaper || "");
+      applyLang(localStorage.getItem("mb_lang") || s.lang || "zh");
     } catch { /* ignore */ }
     await route();
   } catch (e) {

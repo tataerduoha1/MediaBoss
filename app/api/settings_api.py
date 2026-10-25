@@ -13,7 +13,7 @@ SAFE_KEYS = {
     "scrape_provider_order", "translate_enabled", "proxy", "ffmpeg_path", "mpv_path",
     "thumb_workers", "sprite_enabled", "lan_access", "cd2_url", "cd2_user", "cd2_pass",
     "download_dir", "organize_template", "hide_watched", "page_size",
-    "scrape_retry_cooldown_min", "theme",
+    "scrape_retry_cooldown_min", "theme", "accent_color", "wallpaper", "lang",
 }
 
 

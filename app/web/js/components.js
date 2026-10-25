@@ -1,6 +1,6 @@
-﻿/** 共享 UI 组件：卡片、分页、骨架屏、空状态。 */
-import { h, fmtSize, fmtDur, lazyimg, toast } from "./util.js?v=4";
-import { api } from "./api.js?v=4";
+/** 共享 UI 组件：卡片、分页、骨架屏、空状态。 */
+import { h, fmtSize, fmtDur, lazyimg, toast } from "./util.js?v=6";
+import { api } from "./api.js?v=6";
 
 /** 封面缺失时的美观占位：有番号则用番号稳定哈希生成双色渐变 + 大字番号。 */
 function coverPh(item) {

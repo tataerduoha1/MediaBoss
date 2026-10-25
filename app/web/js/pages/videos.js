@@ -1,7 +1,7 @@
-﻿/** 视频库：网格 + 筛选/排序/搜索 + 分页 */
-import { api } from "../api.js?v=4";
-import { h, debounce, toast, confirmModal, pageMem } from "../util.js?v=4";
-import { videoCard, pager, skeletonGrid, emptyState } from "../components.js?v=4";
+/** 视频库：网格 + 筛选/排序/搜索 + 分页 */
+import { api } from "../api.js?v=6";
+import { h, debounce, toast, confirmModal, pageMem } from "../util.js?v=6";
+import { videoCard, pager, skeletonGrid, emptyState } from "../components.js?v=6";
 
 export async function render(view, params, query) {
   document.title = "视频库 · MediaBoss";

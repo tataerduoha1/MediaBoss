@@ -127,6 +127,90 @@ export function applyTheme(t = "dark") {
   localStorage.setItem("mb_theme", t);
 }
 
+/* ===== v1.2 新增：基础 i18n（界面框架层） ===== */
+const I18N = {
+  zh: {
+    "nav.dashboard": "仪表盘", "nav.videos": "视频库", "nav.jav": "JAV 库",
+    "nav.actresses": "女优", "nav.studios": "厂商", "nav.series": "系列",
+    "nav.genres": "类别", "nav.collections": "片单", "nav.insights": "观影统计",
+    "nav.tools": "工具箱", "nav.history": "观看历史", "nav.downloads": "下载",
+    "nav.settings": "设置", "group.library": "媒体库", "group.other": "其他",
+    "search.placeholder": "搜索番号 / 标题 / 文件名…",
+    "act.logout": "退出", "act.update": "更新", "task.idle": "空闲",
+  },
+  en: {
+    "nav.dashboard": "Dashboard", "nav.videos": "Videos", "nav.jav": "JAV Library",
+    "nav.actresses": "Actresses", "nav.studios": "Studios", "nav.series": "Series",
+    "nav.genres": "Genres", "nav.collections": "Collections", "nav.insights": "Insights",
+    "nav.tools": "Toolbox", "nav.history": "History", "nav.downloads": "Downloads",
+    "nav.settings": "Settings", "group.library": "Library", "group.other": "More",
+    "search.placeholder": "Search code / title / filename…",
+    "act.logout": "Exit", "act.update": "Update", "task.idle": "Idle",
+  },
+};
+
+export function t(key) {
+  let lang = "zh";
+  try { lang = localStorage.getItem("mb_lang") || "zh"; } catch { /* ignore */ }
+  return (I18N[lang] && I18N[lang][key]) || I18N.zh[key] || key;
+}
+
+/** 切换语言并即时刷新带 data-i18n 标记的元素。 */
+export function applyLang(lang) {
+  try { localStorage.setItem("mb_lang", lang === "en" ? "en" : "zh"); } catch { /* ignore */ }
+  document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  const gs = document.getElementById("global-search");
+  if (gs) gs.placeholder = t("search.placeholder");
+}
+
+/* ===== v1.2 新增：强调色 / 壁纸 ===== */
+function _hexRgb(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/** 应用自定义强调色（hex）。light 主题下派生色变暗以保证对比度。传空恢复默认。 */
+export function applyAccent(hex) {
+  const root = document.documentElement;
+  const rgb = _hexRgb(hex);
+  if (!rgb) {
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--accent-h");
+    root.style.removeProperty("--accent-dim");
+    try { localStorage.removeItem("mb_accent"); } catch { /* ignore */ }
+    return;
+  }
+  const [r, g, b] = rgb;
+  const theme = root.getAttribute("data-theme");
+  const light = theme === "light"
+    || (theme === "auto" && window.matchMedia?.("(prefers-color-scheme: light)").matches);
+  const d = light ? -28 : 26;
+  const hexOf = (x) => x.toString(16).padStart(2, "0");
+  root.style.setProperty("--accent", `#${rgb.map(hexOf).join("")}`);
+  root.style.setProperty("--accent-h",
+    `rgb(${Math.min(255, Math.max(0, r + d))}, ${Math.min(255, Math.max(0, g + Math.round(d * .75)))}, ${Math.min(255, Math.max(0, b + Math.round(d * .75)))})`);
+  root.style.setProperty("--accent-dim", `rgba(${r}, ${g}, ${b}, .16)`);
+  try { localStorage.setItem("mb_accent", `#${rgb.map(hexOf).join("")}`); } catch { /* ignore */ }
+}
+
+/** 应用壁纸（URL）。半透明化面板变量让背景透出；传空恢复默认。 */
+export function applyWallpaper(url) {
+  const body = document.body;
+  url = String(url || "").trim();
+  if (!url) {
+    body.classList.remove("has-wallpaper");
+    body.style.backgroundImage = "";
+    try { localStorage.removeItem("mb_wallpaper"); } catch { /* ignore */ }
+    return;
+  }
+  body.classList.add("has-wallpaper");
+  body.style.backgroundImage = `url("${url.replace(/"/g, "%22")}")`;
+  try { localStorage.setItem("mb_wallpaper", url); } catch { /* ignore */ }
+}
+
 /** 列表页码记忆（会话内）：进入详情再返回时恢复翻到之前的页。 */
 export const pageMem = {
   get(key) {

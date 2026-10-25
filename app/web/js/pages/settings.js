@@ -1,6 +1,6 @@
-﻿/** 设置页：媒体目录 / 扫描 / 刮削 / 播放器 / 界面 / 数据管理 / CD2 下载 / 整理 / 安全 / 关于 */
-import { api } from "../api.js?v=4";
-import { h, toast, confirmModal, modal, fmtSize, applyTheme } from "../util.js?v=4";
+/** 设置页：媒体目录 / 扫描 / 刮削 / 播放器 / 界面 / 数据管理 / CD2 下载 / 整理 / 安全 / 关于 */
+import { api } from "../api.js?v=6";
+import { h, toast, confirmModal, modal, fmtSize, applyTheme, applyAccent, applyWallpaper, applyLang } from "../util.js?v=6";
 
 export async function render(view) {
   document.title = "设置 · MediaBoss";
@@ -179,11 +179,73 @@ export async function render(view) {
     h("option", { value: "auto", selected: settings.theme === "auto" }, "🌗 跟随系统"));
   themeSel.addEventListener("change", () => {
     applyTheme(themeSel.value);
+    applyAccent(settings.accent_color || "");  // 重算派生色（亮/暗色方向不同）
     dirty.theme = themeSel.value;
     markDirty();
   });
 
+  /* ===== 界面：强调色 / 壁纸 / 语言（A10） ===== */
+  const accentInput = h("input", { type: "color", value: settings.accent_color || "#e0556b",
+    style: "width:46px;height:32px;padding:2px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);cursor:pointer" });
+  accentInput.addEventListener("input", () => {
+    applyAccent(accentInput.value);
+    dirty.accent_color = accentInput.value;
+    markDirty();
+  });
+  const accentReset = h("button", { class: "btn sm" }, "重置");
+  accentReset.addEventListener("click", () => {
+    applyAccent("");
+    accentInput.value = "#e0556b";
+    dirty.accent_color = "";
+    markDirty();
+    toast("已恢复默认强调色", "ok", 1500);
+  });
+  const wpInput = h("input", { class: "input", type: "text", value: settings.wallpaper || "",
+    placeholder: "图片 URL，留空不使用壁纸" });
+  wpInput.addEventListener("change", () => {
+    applyWallpaper(wpInput.value.trim());
+    dirty.wallpaper = wpInput.value.trim();
+    markDirty();
+  });
+  const wpClear = h("button", { class: "btn sm" }, "清除");
+  wpClear.addEventListener("click", () => {
+    applyWallpaper("");
+    wpInput.value = "";
+    dirty.wallpaper = "";
+    markDirty();
+  });
+  const langSel = h("select", { class: "input", style: "max-width:170px" },
+    h("option", { value: "zh", selected: (settings.lang || "zh") === "zh" }, "🇨🇳 中文"),
+    h("option", { value: "en", selected: settings.lang === "en" }, "🇺🇸 English"));
+  langSel.addEventListener("change", () => {
+    applyLang(langSel.value);
+    dirty.lang = langSel.value;
+    markDirty();
+  });
+
   /* ===== 数据管理 ===== */
+  const restoreInput = h("input", { type: "file", accept: ".zip", style: "display:none" });
+  restoreInput.addEventListener("change", () => {
+    const f = restoreInput.files[0];
+    restoreInput.value = "";
+    if (!f) return;
+    confirmModal("恢复备份", `将用「${f.name}」覆盖当前全部数据（视频索引 / JAV 元数据 / 历史 / 设置 / 封面），操作不可撤销。`,
+      async () => {
+        toast("恢复中，请勿关闭页面…", "info", 10000);
+        try {
+          const res = await fetch("/api/system/restore?confirm=RESTORE", {
+            method: "POST",
+            headers: { "Content-Type": "application/octet-stream" },
+            body: await f.arrayBuffer(),
+          });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok || d.ok === false) throw new Error(d.error || `恢复失败 (${res.status})`);
+          toast(d.data?.msg || "恢复完成，即将刷新…", "ok", 5000);
+          setTimeout(() => location.reload(), 2000);
+        } catch (e) { toast(e.message, "err"); }
+      }, true);
+  });
+
   const dictWrap = h("div", {});
   const renderDict = async () => {
     let dd;
@@ -249,6 +311,37 @@ export async function render(view) {
   };
   renderDict();
 
+  /* ===== A8 检查更新 ===== */
+  const checkUpdBtn = h("button", { class: "btn sm" }, "🔍 检查更新");
+  checkUpdBtn.addEventListener("click", async () => {
+    checkUpdBtn.disabled = true;
+    checkUpdBtn.textContent = "检查中…";
+    try {
+      const r = await api.get("/system/check-update");
+      if (r.available && r.has_update) {
+        modal((box, close) => {
+          box.append(
+            h("h3", { style: "margin-top:0" }, "🎉 发现新版本"),
+            h("p", { style: "margin:4px 0" },
+              h("b", {}, `v${r.current}`), " → ",
+              h("b", { style: "color:var(--accent-h)" }, `v${r.latest}`),
+              r.published_at ? h("span", { class: "mut" }, ` · ${r.published_at}`) : null),
+            r.name ? h("p", { style: "font-weight:600;margin:2px 0 8px" }, r.name) : null,
+            r.notes ? h("pre", { style: "max-height:300px;overflow:auto;white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12.5px;margin:0 0 12px" }, r.notes) : null,
+            h("div", { class: "acts" },
+              r.url ? h("a", { class: "btn primary", href: r.url, target: "_blank", rel: "noopener" }, "前往下载") : null,
+              h("button", { class: "btn", onclick: close }, "关闭")));
+        });
+      } else if (r.available) {
+        toast(`已是最新版本 v${r.current}`, "ok", 4000);
+      } else {
+        toast(r.reason || "暂无法在线检查更新", "info", 4500);
+      }
+    } catch (e) { toast(e.message, "err"); }
+    checkUpdBtn.disabled = false;
+    checkUpdBtn.textContent = "🔍 检查更新";
+  });
+
   /* ===== 组装 ===== */
   wrap.append(
     saveBtn,
@@ -272,12 +365,23 @@ export async function render(view) {
       setRow("工具状态", "", toolInfo, detectBtn, info.ffmpeg?.available ? null : installBtn)),
     group("🖥", "界面",
       setRow("主题", "暗色 / 亮色 / 跟随系统，立即生效", themeSel),
+      setRow("强调色", "自定义按钮 / 高亮颜色，立即生效", accentInput, accentReset),
+      setRow("壁纸", "背景图片 URL，界面面板自动半透明", wpInput, wpClear),
+      setRow("语言 Language", "界面语言（基础翻译）", langSel),
       setRow("每页数量", "", num("page_size")),
       setRow("隐藏已看完", "视频库默认过滤已看完", toggle("hide_watched"))),
     group("🗄", "数据管理",
       h("p", { style: "color:var(--faint);font-size:12.5px;margin:0 0 12px" },
         "数据分三类：长期（数据库/截图/工具，删除不可恢复）、缓存（封面/缩略图/雪碧图，可自动重建）、临时（日志/缓存，随时可清）。"),
-      dictWrap),
+      dictWrap,
+      h("div", { style: "display:flex;gap:9px;flex-wrap:wrap;margin-top:14px" },
+        h("a", { class: "btn sm", href: "/api/system/backup", download: "" }, "📦 下载数据备份"),
+        h("button", {
+          class: "btn sm", onclick: () => restoreInput.click(),
+        }, "♻️ 恢复备份"),
+        restoreInput,
+        h("span", { style: "align-self:center;font-size:12px;color:var(--faint)" },
+          "备份包含完整数据库 + 封面 / 自定义海报，恢复将覆盖现有数据"))),
     group("⬇️", "CD2 下载",
       setRow("CloudDrive2", "API 地址，如 http://127.0.0.1:19798", txt("cd2_url")),
       setRow("用户名 / 密码", "", txt("cd2_user"), txt("cd2_pass")),
@@ -292,7 +396,7 @@ export async function render(view) {
       setRow("API 令牌", "用于外部程序调用 API（Bearer 认证）", tokenName, tokenBtn),
       tokenList),
     group("ℹ️", "关于",
-      setRow("版本", "", h("span", { class: "badge info" }, `v${info.version}`)),
+      setRow("版本", "", h("span", { class: "badge info" }, `v${info.version}`), checkUpdBtn),
       setRow("运行环境", "", h("span", { style: "color:var(--muted);font-size:12.5px" },
         `Python ${info.python} · ${info.platform}`)),
       setRow("数据库大小", "", h("span", {}, fmtSize(info.db_size))),

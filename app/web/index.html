@@ -1,25 +1,50 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#e0556b">
 <title>MediaBoss</title>
+<link rel="manifest" href="/manifest.json">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e0556b'/%3E%3Cpath d='M11 9.5v13l11-6.5z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="/ico/icon-192.png">
 <script>
-/* 主题防闪烁：CSS 加载前应用本地主题偏好 */
-(function(){try{var t=localStorage.getItem("mb_theme")||"dark";document.documentElement.setAttribute("data-theme",t==="auto"?"auto":t);}catch(e){}})();
+/* 主题防闪烁：CSS 加载前应用本地主题偏好与自定义强调色 */
+(function(){try{
+  var t=localStorage.getItem("mb_theme")||"dark";
+  document.documentElement.setAttribute("data-theme",t==="auto"?"auto":t);
+  var acc=localStorage.getItem("mb_accent");
+  if(acc&&/^#[0-9a-fA-F]{6}$/.test(acc)){
+    var n=parseInt(acc.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+    var st=document.documentElement.style;
+    st.setProperty("--accent",acc);
+    st.setProperty("--accent-h","rgb("+Math.min(255,r+26)+","+Math.min(255,g+20)+","+Math.min(255,b+20)+")");
+    st.setProperty("--accent-dim","rgba("+r+","+g+","+b+",.16)");
+  }
+}catch(e){}})();
 </script>
-<link rel="stylesheet" href="/css/app.css?v=4">
+<link rel="stylesheet" href="/css/app.css?v=6">
 </head>
 <body>
 <div id="app"></div>
 <div id="toasts"></div>
 <div id="modal-root"></div>
+<script>
+/* 壁纸防闪烁：body 就绪后立即叠加 */
+(function(){try{
+  var wp=localStorage.getItem("mb_wallpaper");
+  if(wp){document.body.classList.add("has-wallpaper");document.body.style.backgroundImage='url("'+wp.replace(/"/g,"%22")+'")';}
+}catch(e){}})();
+/* PWA Service Worker：仅安全上下文注册（/api 永不缓存） */
+if("serviceWorker" in navigator && (location.protocol==="https:" || ["localhost","127.0.0.1"].indexOf(location.hostname)>=0)){
+  window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});
+}
+</script>
 <script type="module">
 /* 自愈引导：浏览器残留旧缓存导致模块图加载失败时，自动强刷一次；再失败则给出自救提示 */
 try {
-  await import("/js/app.js?v=4");
+  await import("/js/app.js?v=6");
 } catch (e) {
   if (!sessionStorage.getItem("mb_boot_reload")) {
     sessionStorage.setItem("mb_boot_reload", "1");
