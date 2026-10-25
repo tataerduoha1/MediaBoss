@@ -1,7 +1,7 @@
 /** JAV 库：封面墙 + 多维筛选（女优/厂商/系列/类别）+ 列表与详情 */
-import { api } from "../api.js?v=6";
-import { h, debounce, toast, confirmModal, promptModal, modal, fmtDur, fmtSize, fmtAgo, stars, lazyimg, pageMem } from "../util.js?v=6";
-import { javCard, pager, skeletonGrid, emptyState, ratingStars, favBtn } from "../components.js?v=6";
+import { api } from "../api.js?v=17";
+import { h, debounce, toast, confirmModal, promptModal, modal, fmtDur, fmtSize, fmtAgo, stars, lazyimg, pageMem, isLocal } from "../util.js?v=17";
+import { javCard, pager, skeletonGrid, emptyState, ratingStars, favBtn } from "../components.js?v=17";
 
 export async function render(view, params, query) {
   document.title = "JAV 库 · MediaBoss";
@@ -154,12 +154,13 @@ function buildDetail(j, v, related, holder) {
   renderTags(tags);
 
   const playBtn = h("a", { class: "btn primary", href: `#/player/${v.id}` }, "▶ 网页播放");
-  const mpvBtn = h("button", {
+  // mpv 是唤起服务器本机的外部播放器，仅服务器本机浏览时显示（手机端点会在电脑上弹窗口）
+  const mpvBtn = isLocal() ? h("button", {
     class: "btn", onclick: async () => {
       try { await api.post(`/videos/${v.id}/mpv`, {}); toast("已调用 mpv 播放", "ok"); }
       catch (e) { toast(e.message, "err"); }
     },
-  }, "🖥 mpv 播放");
+  }, "🖥 mpv 播放") : null;
   const rescrapeBtn = h("button", {
     class: "btn", onclick: async () => {
       try { await api.post(`/jav/${j.id}/rescrape`); toast("已加入刮削队列", "ok"); }

@@ -17,14 +17,16 @@
   var acc=localStorage.getItem("mb_accent");
   if(acc&&/^#[0-9a-fA-F]{6}$/.test(acc)){
     var n=parseInt(acc.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+    var light=(t==="light"||t==="sepia"||t==="sakura")||(t==="auto"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches);
+    var d=light?-28:26;
     var st=document.documentElement.style;
     st.setProperty("--accent",acc);
-    st.setProperty("--accent-h","rgb("+Math.min(255,r+26)+","+Math.min(255,g+20)+","+Math.min(255,b+20)+")");
+    st.setProperty("--accent-h","rgb("+Math.min(255,Math.max(0,r+d))+","+Math.min(255,Math.max(0,g+Math.round(d*.75)))+","+Math.min(255,Math.max(0,b+Math.round(d*.75)))+")");
     st.setProperty("--accent-dim","rgba("+r+","+g+","+b+",.16)");
   }
 }catch(e){}})();
 </script>
-<link rel="stylesheet" href="/css/app.css?v=6">
+<link rel="stylesheet" href="/css/app.css?v=17">
 </head>
 <body>
 <div id="app"></div>
@@ -44,7 +46,7 @@ if("serviceWorker" in navigator && (location.protocol==="https:" || ["localhost"
 <script type="module">
 /* 自愈引导：浏览器残留旧缓存导致模块图加载失败时，自动强刷一次；再失败则给出自救提示 */
 try {
-  await import("/js/app.js?v=6");
+  await import("/js/app.js?v=17");
 } catch (e) {
   if (!sessionStorage.getItem("mb_boot_reload")) {
     sessionStorage.setItem("mb_boot_reload", "1");

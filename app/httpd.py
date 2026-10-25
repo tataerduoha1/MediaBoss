@@ -74,7 +74,11 @@ class Request:
         return self.h.client_address[0]
 
     def is_localhost(self) -> bool:
-        return self.remote in ("127.0.0.1", "::1", "localhost")
+        ip = self.remote.lower()
+        if ip.startswith("::ffff:"):
+            # 双栈监听（AF_INET6 + V6ONLY=0）下 IPv4 客户端地址呈 IPv4-mapped 形式
+            ip = ip[len("::ffff:"):]
+        return ip in ("127.0.0.1", "::1", "localhost")
 
 
 class Response:
@@ -86,6 +90,8 @@ class Response:
         self.headers = headers or {}
         self.file_path = None
         self.stream_spec = None  # (file_path, range_start, range_end)
+        self.pipe_iter = None    # 实时流迭代器（如 ffmpeg 转码 stdout），与 stream_spec 互斥
+        self.on_close = None     # 流结束/客户端断开后的清理回调（如 kill 子进程）
         self.cookie = None       # (key, value, max_age)
 
 
@@ -261,6 +267,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
     def _send(self, resp: Response):
+        if resp.pipe_iter:
+            return self._send_pipe(resp)
         if resp.file_path:
             with open(resp.file_path, "rb") as f:
                 resp.body = f.read()
@@ -278,6 +286,30 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         if self.command != "HEAD" and resp.body:
             self.wfile.write(resp.body)
+
+    def _send_pipe(self, resp: Response):
+        """实时管道流（无 Content-Length，靠 Connection: close 分隔），客户端断开即清理。"""
+        self.close_connection = True
+        try:
+            self.send_response(resp.status)
+            self.send_header("Content-Type", resp.content_type)
+            self.send_header("Connection", "close")
+            for k, v in resp.headers.items():
+                self.send_header(k, v)
+            self.end_headers()
+            if self.command == "HEAD":
+                return
+            for chunk in resp.pipe_iter:
+                self.wfile.write(chunk)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, TimeoutError, OSError):
+            pass  # 客户端断开（暂停/拖动/切页），属正常行为
+        finally:
+            cb, resp.on_close = resp.on_close, None
+            if cb:
+                try:
+                    cb()
+                except Exception:  # noqa: BLE001
+                    pass
 
     def _send_stream(self, resp: Response):
         file_path, start, end = resp.stream_spec

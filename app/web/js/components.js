@@ -1,6 +1,6 @@
 /** 共享 UI 组件：卡片、分页、骨架屏、空状态。 */
-import { h, fmtSize, fmtDur, lazyimg, toast } from "./util.js?v=6";
-import { api } from "./api.js?v=6";
+import { h, fmtSize, fmtDur, lazyimg, toast } from "./util.js?v=17";
+import { api } from "./api.js?v=17";
 
 /** 封面缺失时的美观占位：有番号则用番号稳定哈希生成双色渐变 + 大字番号。 */
 function coverPh(item) {
@@ -77,10 +77,12 @@ export function entityCard(e, { square = false, avatarUrl = null } = {}) {
     img.addEventListener("error", () => img.remove(), { once: true });
     avatar.prepend(img);
   }
+  // 影片数：实体库端点用 video_count，仪表盘端点用 count，兜底 0 防 "undefined 部"
+  const cnt = e.video_count ?? e.count ?? 0;
   const card = h("a", { class: `ecard ${square ? "sq" : ""}`, href: e.href },
     avatar,
     h("div", { class: "name", title: e.name }, e.name),
-    h("div", { class: "cnt" }, `${e.video_count} 部`),
+    h("div", { class: "cnt" }, `${cnt} 部`),
   );
   return card;
 }

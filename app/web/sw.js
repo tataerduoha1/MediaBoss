@@ -1,5 +1,5 @@
-/* MediaBoss Service Worker：静态资源 cache-first，API 永不缓存（B8 PWA）。 */
-const CACHE = "mb-static-v5";
+/* MediaBoss Service Worker：静态资源 cache-first，导航页/API 永不缓存（B8 PWA）。 */
+const CACHE = "mb-static-v9";
 const PRECACHE = [
   "/manifest.json",
   "/ico/icon-192.png",
@@ -23,6 +23,11 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
   // API 与视频流一律直连网络，绝不缓存
   if (url.pathname.startsWith("/api/")) return;
+  // HTML 导航请求永不缓存（版本更新即时生效，静态资源版本由 ?v= 控制）
+  if (e.request.mode === "navigate" || e.request.destination === "document") {
+    e.respondWith(fetch(e.request));
+    return;
+  }
   // 静态资源：cache-first，后台刷新
   e.respondWith(
     caches.match(e.request).then((hit) => {

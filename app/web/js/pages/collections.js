@@ -1,7 +1,7 @@
 /** 片单/合集（A9）：列表卡片 + 详情网格管理（增删条目、设封面、改名、删除）。 */
-import { api } from "../api.js?v=6";
-import { h, toast, confirmModal, promptModal, fmtSize, fmtDur, lazyimg, fmtAgo } from "../util.js?v=6";
-import { javCard, skeletonGrid, emptyState } from "../components.js?v=6";
+import { api } from "../api.js?v=17";
+import { h, toast, confirmModal, promptModal, fmtSize, fmtDur, lazyimg, fmtAgo } from "../util.js?v=17";
+import { javCard, skeletonGrid, emptyState } from "../components.js?v=17";
 
 export async function render(view) {
   document.title = "片单 · MediaBoss";

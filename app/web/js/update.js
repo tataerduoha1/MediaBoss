@@ -1,6 +1,6 @@
 /** 更新任务对话框：全量/增量选择 + 实时进度（成功/失败/总数/耗时/预计剩余）+ 取消。 */
-import { api } from "./api.js?v=6";
-import { h, toast, modal } from "./util.js?v=6";
+import { api } from "./api.js?v=17";
+import { h, toast, modal } from "./util.js?v=17";
 
 const fmtElapsed = (s) => {
   s = Math.max(0, Math.round(s || 0));

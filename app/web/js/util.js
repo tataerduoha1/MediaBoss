@@ -52,6 +52,9 @@ export const fmtAgo = (ts) => {
   return fmtTime(ts).slice(0, 10);
 };
 
+/** 是否在服务器本机浏览（mpv 唤起等本机操作仅此场景显示；远端触发会在服务器上弹窗） */
+export const isLocal = () => ["localhost", "127.0.0.1", "[::1]", "::1"].includes(location.hostname);
+
 export function toast(msg, type = "ok", ms = 2600) {
   const box = document.getElementById("toasts");
   const t = h("div", { class: `toast ${type}` }, msg);
@@ -121,7 +124,7 @@ export function debounce(fn, ms = 300) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-/** 主题应用：dark / light / auto。写入 localStorage 供下次无闪烁加载。 */
+/** 主题应用：dark / light / oled / mocha / forest / sepia / ocean / neon / gold / sakura / auto。写入 localStorage 供下次无闪烁加载。 */
 export function applyTheme(t = "dark") {
   document.documentElement.setAttribute("data-theme", t === "auto" ? "auto" : t);
   localStorage.setItem("mb_theme", t);
@@ -185,7 +188,7 @@ export function applyAccent(hex) {
   }
   const [r, g, b] = rgb;
   const theme = root.getAttribute("data-theme");
-  const light = theme === "light"
+  const light = theme === "light" || theme === "sepia" || theme === "sakura"
     || (theme === "auto" && window.matchMedia?.("(prefers-color-scheme: light)").matches);
   const d = light ? -28 : 26;
   const hexOf = (x) => x.toString(16).padStart(2, "0");

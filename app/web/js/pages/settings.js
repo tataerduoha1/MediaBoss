@@ -1,6 +1,6 @@
 /** 设置页：媒体目录 / 扫描 / 刮削 / 播放器 / 界面 / 数据管理 / CD2 下载 / 整理 / 安全 / 关于 */
-import { api } from "../api.js?v=6";
-import { h, toast, confirmModal, modal, fmtSize, applyTheme, applyAccent, applyWallpaper, applyLang } from "../util.js?v=6";
+import { api } from "../api.js?v=17";
+import { h, toast, confirmModal, modal, fmtSize, applyTheme, applyAccent, applyWallpaper, applyLang } from "../util.js?v=17";
 
 export async function render(view) {
   document.title = "设置 · MediaBoss";
@@ -176,6 +176,14 @@ export async function render(view) {
   const themeSel = h("select", { class: "input", style: "max-width:170px" },
     h("option", { value: "dark", selected: (settings.theme || "dark") === "dark" }, "🌙 暗色"),
     h("option", { value: "light", selected: settings.theme === "light" }, "☀️ 亮色"),
+    h("option", { value: "oled", selected: settings.theme === "oled" }, "🖤 纯黑"),
+    h("option", { value: "mocha", selected: settings.theme === "mocha" }, "☕ 暖棕"),
+    h("option", { value: "forest", selected: settings.theme === "forest" }, "🌲 墨绿"),
+    h("option", { value: "sepia", selected: settings.theme === "sepia" }, "📜 羊皮纸"),
+    h("option", { value: "ocean", selected: settings.theme === "ocean" }, "🌊 深海"),
+    h("option", { value: "neon", selected: settings.theme === "neon" }, "🌌 霓虹"),
+    h("option", { value: "gold", selected: settings.theme === "gold" }, "🥂 黑金"),
+    h("option", { value: "sakura", selected: settings.theme === "sakura" }, "🌸 樱花"),
     h("option", { value: "auto", selected: settings.theme === "auto" }, "🌗 跟随系统"));
   themeSel.addEventListener("change", () => {
     applyTheme(themeSel.value);
@@ -358,13 +366,13 @@ export async function render(view) {
       setRow("标题翻译", "使用 Google 翻译接口", toggle("translate_enabled")),
       setRow("网络代理", "如 http://127.0.0.1:7890，留空不使用", txt("proxy", "http://127.0.0.1:7890"))),
     group("🎬", "播放器与缩略图",
-      setRow("mpv 路径", "外部播放器可执行文件路径", txt("mpv_path")),
+      setRow("mpv 路径", "外部播放器可执行文件路径（mpv 按钮仅服务器本机网页显示）", txt("mpv_path")),
       setRow("ffmpeg 路径", "留空自动探测；也可点下方自动下载", txt("ffmpeg_path")),
       setRow("缩略图并发", "同时生成缩略图的线程数", num("thumb_workers")),
       setRow("进度条雪碧图", "播放页悬停预览", toggle("sprite_enabled")),
       setRow("工具状态", "", toolInfo, detectBtn, info.ffmpeg?.available ? null : installBtn)),
     group("🖥", "界面",
-      setRow("主题", "暗色 / 亮色 / 跟随系统，立即生效", themeSel),
+      setRow("主题", "暗色 / 亮色 / 纯黑 / 暖棕 / 墨绿 / 羊皮纸 / 深海 / 霓虹 / 黑金 / 樱花 / 跟随系统，立即生效", themeSel),
       setRow("强调色", "自定义按钮 / 高亮颜色，立即生效", accentInput, accentReset),
       setRow("壁纸", "背景图片 URL，界面面板自动半透明", wpInput, wpClear),
       setRow("语言 Language", "界面语言（基础翻译）", langSel),

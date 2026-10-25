@@ -1,7 +1,7 @@
 /** 观看历史：同视频一条记录、显示进度、点击续播、单删/批删/清空。 */
-import { api } from "../api.js?v=6";
-import { h, fmtDur, toast, confirmModal } from "../util.js?v=6";
-import { pager, emptyState } from "../components.js?v=6";
+import { api } from "../api.js?v=17";
+import { h, fmtDur, toast, confirmModal } from "../util.js?v=17";
+import { pager, emptyState } from "../components.js?v=17";
 
 export async function render(view) {
   document.title = "观看历史 · MediaBoss";

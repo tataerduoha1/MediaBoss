@@ -47,6 +47,142 @@ html[data-theme="light"] {
   --hover: rgba(20, 30, 60, .05);
   --sb-thumb: #c4cad6;
 }
+/* 纯黑主题（OLED 省电 / 影视氛围） */
+html[data-theme="oled"] {
+  --bg: #000000;
+  --bg2: #0a0a0a;
+  --surface: #101010;
+  --surface2: #181818;
+  --card: #0d0d0d;
+  --border: #232323;
+  --border2: #333333;
+  --text: #eaeaea;
+  --muted: #999999;
+  --faint: #666666;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .6);
+  --topbar-bg: rgba(0, 0, 0, .82);
+  --hover: rgba(255, 255, 255, .05);
+  --sb-thumb: #333333;
+}
+/* 暖棕主题（咖啡馆暖调暗色） */
+html[data-theme="mocha"] {
+  --bg: #171210;
+  --bg2: #1d1714;
+  --surface: #241b17;
+  --surface2: #2b211c;
+  --card: #221a15;
+  --border: #3a2c24;
+  --border2: #4a392e;
+  --text: #f0e6dc;
+  --muted: #a89787;
+  --faint: #6f5f51;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .5);
+  --topbar-bg: rgba(23, 18, 16, .82);
+  --hover: rgba(255, 235, 215, .04);
+  --sb-thumb: #4a392e;
+}
+/* 墨绿主题（森林暗绿） */
+html[data-theme="forest"] {
+  --bg: #0c1310;
+  --bg2: #101a15;
+  --surface: #15211b;
+  --surface2: #1a2820;
+  --card: #14201a;
+  --border: #26382e;
+  --border2: #314839;
+  --text: #e2efe6;
+  --muted: #8aa394;
+  --faint: #5c7264;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .5);
+  --topbar-bg: rgba(12, 19, 16, .82);
+  --hover: rgba(220, 255, 235, .04);
+  --sb-thumb: #314839;
+}
+/* 羊皮纸主题（暖色护眼浅色） */
+html[data-theme="sepia"] {
+  --bg: #f5efe4;
+  --bg2: #ece4d4;
+  --surface: #fdf9f0;
+  --surface2: #f2ebdc;
+  --card: #fdf9f0;
+  --border: #e0d5c0;
+  --border2: #c9bba0;
+  --text: #3d3226;
+  --muted: #7a6a54;
+  --faint: #a3947c;
+  --shadow: 0 8px 28px rgba(90, 70, 40, .14);
+  --topbar-bg: rgba(253, 249, 240, .86);
+  --hover: rgba(120, 90, 40, .06);
+  --sb-thumb: #cfc2a8;
+}
+/* 深海主题（静谧深海蓝） */
+html[data-theme="ocean"] {
+  --bg: #0a101d;
+  --bg2: #0d1524;
+  --surface: #112036;
+  --surface2: #16283f;
+  --card: #101d30;
+  --border: #213a58;
+  --border2: #2c4a6e;
+  --text: #e4edf8;
+  --muted: #8ca4c0;
+  --faint: #5d7691;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .5);
+  --topbar-bg: rgba(10, 16, 29, .82);
+  --hover: rgba(160, 210, 255, .05);
+  --sb-thumb: #2c4a6e;
+}
+/* 霓虹主题（赛博紫夜） */
+html[data-theme="neon"] {
+  --bg: #0e0a1c;
+  --bg2: #130e26;
+  --surface: #1a1233;
+  --surface2: #221847;
+  --card: #181132;
+  --border: #302356;
+  --border2: #41306f;
+  --text: #ece6fb;
+  --muted: #9c90c6;
+  --faint: #6a5e99;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .55);
+  --topbar-bg: rgba(14, 10, 28, .82);
+  --hover: rgba(190, 150, 255, .06);
+  --sb-thumb: #41306f;
+}
+/* 黑金主题（轻奢暖黑） */
+html[data-theme="gold"] {
+  --bg: #131110;
+  --bg2: #181513;
+  --surface: #1f1b18;
+  --surface2: #272220;
+  --card: #1d1916;
+  --border: #342e28;
+  --border2: #453d34;
+  --text: #f1ebe1;
+  --muted: #aa9d8b;
+  --faint: #716657;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .55);
+  --topbar-bg: rgba(19, 17, 16, .82);
+  --hover: rgba(255, 226, 170, .05);
+  --sb-thumb: #453d34;
+}
+/* 樱花主题（柔粉浅色） */
+html[data-theme="sakura"] {
+  --bg: #faf1f4;
+  --bg2: #f4e6ec;
+  --surface: #fffbfc;
+  --surface2: #f8ebf0;
+  --card: #fffbfc;
+  --border: #eed8e0;
+  --border2: #dcc0cc;
+  --text: #3b2a32;
+  --muted: #81636f;
+  --faint: #ad8f9b;
+  --shadow: 0 8px 28px rgba(120, 60, 90, .12);
+  --topbar-bg: rgba(255, 251, 252, .86);
+  --hover: rgba(150, 60, 100, .06);
+  --sb-thumb: #dcc0cc;
+}
 /* 跟随系统：浅色系统偏好时套用亮色 */
 @media (prefers-color-scheme: light) {
   html[data-theme="auto"] {
@@ -69,7 +205,8 @@ html[data-theme="light"] {
     --sb-thumb: #c4cad6;
   }
 }
-html[data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--sb-thumb); }
+html[data-theme="light"] ::-webkit-scrollbar-thumb,
+html[data-theme="sepia"] ::-webkit-scrollbar-thumb { background: var(--sb-thumb); }
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -126,7 +263,7 @@ input, select, textarea { font: inherit; }
   padding: 0 22px; border-bottom: 1px solid var(--border); background: var(--topbar-bg);
   backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 20;
 }
-.topbar .burger { display: none; }
+.topbar .burger { background: none; border: none; font-size: 19px; color: var(--muted); cursor: pointer; padding: 2px 8px; }
 .searchbox { position: relative; flex: 1; max-width: 460px; }
 .searchbox input {
   width: 100%; padding: 7px 12px 7px 34px; border-radius: 8px;
@@ -150,6 +287,13 @@ input, select, textarea { font: inherit; }
 .task-pill.busy .dot { background: var(--warn); animation: pulse 1.2s infinite; }
 @keyframes pulse { 50% { opacity: .3; } }
 
+/* 桌面：burger 折叠/展开侧栏；宽于 860 时永远不显示抽屉遮罩（防窄→宽窗口 resize 遗留） */
+@media (min-width: 861px) {
+  .topbar .burger { display: block; }
+  .layout.side-collapsed > .sidebar { display: none; }
+  .layout > .scrim { display: none !important; }
+}
+
 /* 移动端 */
 @media (max-width: 860px) {
   .sidebar {
@@ -157,7 +301,7 @@ input, select, textarea { font: inherit; }
     transform: translateX(-100%); transition: transform .2s; box-shadow: var(--shadow);
   }
   .sidebar.open { transform: none; }
-  .topbar .burger { display: block; background: none; border: none; font-size: 19px; color: var(--muted); }
+  .topbar .burger { display: block; }
   .view { padding: 16px 14px 60px; }
   .searchbox kbd { display: none; }
 }
@@ -433,6 +577,7 @@ select.input option { background: var(--surface); }
 /* ============ 播放器 ============ */
 .player-page {
   position: fixed; inset: 0; background: #000; z-index: 60; display: flex; flex-direction: column;
+  color-scheme: dark; /* 播放器全黑场景：UA 控件（下拉弹层/滑杆）强制暗色渲染，亮色主题下不再白底白字 */
 }
 .player-page video { flex: 1; min-height: 0; width: 100%; object-fit: contain; background: #000; }
 .p-topbar {
@@ -441,10 +586,28 @@ select.input option { background: var(--surface); }
   transition: opacity .25s;
 }
 .player-idle .p-topbar, .player-idle .p-controls { opacity: 0; pointer-events: none; }
-.p-topbar .back { background: none; border: none; font-size: 21px; color: #fff; opacity: .85; }
-.p-topbar .tt { color: #fff; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 退出按钮常驻：控制栏自动隐藏时仍保持可点，任何时候一键退出 */
+.player-idle .p-topbar { opacity: 1; background: none; }
+.player-idle .p-topbar .tt, .player-idle .p-topbar .acts { opacity: 0; }
+.player-idle .p-topbar .back { opacity: .4; pointer-events: auto; }
+.player-idle .p-topbar .back:hover { opacity: 1; }
+.p-topbar .tt, .p-topbar .acts { transition: opacity .25s; }
+.p-topbar .back {
+  display: flex; align-items: center; gap: 6px; padding: 8px 15px; border-radius: 9px; min-height: 36px;
+  background: rgba(15, 19, 30, .62); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, .2);
+  font-size: 14.5px; font-weight: 600; color: #fff; opacity: 1; transition: .15s; cursor: pointer;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, .35); text-shadow: 0 1px 4px rgba(0, 0, 0, .5);
+}
+.p-topbar .back:hover { background: var(--accent); border-color: transparent; opacity: 1; }
+.p-topbar .tt { color: #fff; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
 .p-topbar .acts { margin-left: auto; display: flex; gap: 7px; }
-.p-topbar .acts .btn { background: rgba(20, 25, 38, .65); backdrop-filter: blur(6px); }
+/* 播放器为全黑场景：控件颜色独立于主题，亮色主题下同样清晰 */
+.p-topbar .acts .btn {
+  background: rgba(20, 25, 38, .65); backdrop-filter: blur(6px);
+  color: #fff; border-color: rgba(255, 255, 255, .16);
+}
+.p-topbar .acts .btn:hover { background: rgba(20, 25, 38, .88); border-color: rgba(255, 255, 255, .28); }
+.p-topbar .acts .btn.primary { color: #fff; border-color: transparent; }
 .p-controls {
   position: absolute; bottom: 0; left: 0; right: 0; z-index: 5; padding: 26px 16px 10px;
   background: linear-gradient(transparent, rgba(0,0,0,.72)); transition: opacity .25s;
@@ -476,9 +639,21 @@ select.input option { background: var(--surface); }
 }
 .p-btns .pb:hover { background: rgba(255,255,255,.12); opacity: 1; }
 .p-btns .time { color: #ddd; font-size: 12.5px; margin: 0 10px; font-variant-numeric: tabular-nums; }
+.p-btns .p-badge { color: #ffd166; font-size: 11.5px; margin: 0 6px; padding: 3px 9px; border: 1px solid rgba(255, 209, 102, .45);
+  border-radius: 999px; background: rgba(255, 209, 102, .12); white-space: nowrap; text-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
 .p-btns .vol { width: 74px; accent-color: var(--accent); }
 .p-btns .spacer { flex: 1; }
 .player-page .loadtip { position: absolute; inset: 0; display: grid; place-items: center; color: #9aa3b5; }
+/* 播放页错误浮层内的主题按钮统一为暗色玻璃，避免亮色主题下与全黑场景冲突 */
+.player-page .loadtip .btn { background: rgba(20, 25, 38, .85); color: #fff; border-color: rgba(255, 255, 255, .22); }
+.player-page .loadtip .btn.primary { background: linear-gradient(135deg, #e0556b, #c7455c); }
+/* 底部控制按钮描影：亮画面下依然清晰 */
+.p-btns .pb { text-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
+.p-btns .time { text-shadow: 0 1px 4px rgba(0, 0, 0, .6); }
+/* 亮色主题下 --accent-h 偏暗，激活态改用 --accent 并提亮，保证黑底上可见 */
+.p-btns .pb.on { color: var(--accent); filter: brightness(1.15); }
+/* 倍速下拉弹层显式配色：任何主题 / 浏览器下选项都清晰可读（修复白底白字无法选择） */
+.p-btns select.rate option { background: #141926; color: #fff; }
 
 /* 详情页截图墙 */
 .shots { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -569,9 +744,13 @@ select.input option { background: var(--surface); }
   .prefix-bar::-webkit-scrollbar { display: none; }
   .prefix-bar .pb-item { flex: 0 0 auto; }
   .p-btns .vol { display: none; }
+  /* 窄屏隐藏触屏用不上的按钮（音量/静音用硬件键，画中画、快捷键帮助无意义），防止一行放不下被裁切 */
+  .p-btns .m-mute, .p-btns .m-pip, .p-btns .m-help { display: none; }
+  .p-btns { flex-wrap: wrap; }  /* 兜底：极窄屏放不下时换行而非溢出消失 */
   .p-btns .pb { padding: 10px 11px; font-size: 18px; }
   .p-btns .time { margin: 0 6px; font-size: 11.5px; }
   .p-topbar .acts .btn { padding: 7px 10px; }
+  .p-topbar .back { padding: 10px 14px; min-height: 42px; }  /* 触屏更大的退出按钮命中区 */
   .p-topbar .tt { font-size: 13px; }
   /* 设置页等含宽表格的面板：窄屏限宽并允许容器内横向滚动 */
   .set-group .b { overflow-x: auto; }
@@ -583,6 +762,15 @@ select.input option { background: var(--surface); }
   .sprite-pop { display: none !important; }  /* 触屏无 hover，避免遮挡 */
   .modal { width: min(480px, 94vw); padding: 16px; }
   .kbd-row kbd { min-width: 110px; }
+}
+/* 超窄屏（手机竖屏）：进一步收紧播放器控制栏，保证时间 + 徽标 + 常用按钮一行放下 */
+@media (max-width: 480px) {
+  .p-btns { gap: 2px; }
+  .p-btns .pb { padding: 10px 8px; }
+  .p-btns .time { margin: 0 4px; font-size: 11px; }
+  .p-btns .p-badge { margin: 0 4px; padding: 3px 7px; }
+  .p-topbar .acts .btn { padding: 7px 8px; }
+  .p-topbar .tt { font-size: 12px; }
 }
 /* 触摸设备隐藏全局搜索 kbd 提示 */
 @media (hover: none) {
@@ -605,13 +793,23 @@ body.has-wallpaper {
   --surface2: rgba(26, 32, 48, .93);
   --topbar-bg: rgba(11, 14, 20, .72);
 }
-html[data-theme="light"] body.has-wallpaper {
+html[data-theme="light"] body.has-wallpaper,
+html[data-theme="sepia"] body.has-wallpaper,
+html[data-theme="sakura"] body.has-wallpaper {
   --bg: rgba(244, 245, 248, .88);
   --bg2: rgba(236, 238, 242, .92);
   --card: rgba(255, 255, 255, .93);
   --surface: rgba(255, 255, 255, .95);
   --surface2: rgba(241, 243, 247, .95);
   --topbar-bg: rgba(255, 255, 255, .8);
+}
+html[data-theme="sepia"] body.has-wallpaper {
+  --bg: rgba(245, 239, 228, .9);
+  --bg2: rgba(236, 228, 212, .93);
+  --card: rgba(253, 249, 240, .94);
+  --surface: rgba(253, 249, 240, .96);
+  --surface2: rgba(242, 235, 220, .96);
+  --topbar-bg: rgba(253, 249, 240, .82);
 }
 @media (prefers-color-scheme: light) {
   html[data-theme="auto"] body.has-wallpaper {

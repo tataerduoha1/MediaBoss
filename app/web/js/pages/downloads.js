@@ -1,7 +1,7 @@
 /** 下载管理：磁力提交 + 任务列表（CloudDrive2） */
-import { api } from "../api.js?v=6";
-import { h, toast, fmtSize, fmtTime, confirmModal } from "../util.js?v=6";
-import { emptyState } from "../components.js?v=6";
+import { api } from "../api.js?v=17";
+import { h, toast, fmtSize, fmtTime, confirmModal } from "../util.js?v=17";
+import { emptyState } from "../components.js?v=17";
 
 const STATUS = {
   pending: ["mut", "等待"], running: ["info", "下载中"], paused: ["warn", "暂停"],

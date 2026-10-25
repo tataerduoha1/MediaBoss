@@ -1,6 +1,8 @@
-"""视频 API：列表/详情/流媒体/缩略图/进度/收藏评分/标签/截图/整理/NFO。"""
+"""视频 API：列表/详情/流媒体/转码/缩略图/进度/收藏评分/标签/截图/整理/NFO。"""
 import os
 import re
+import subprocess
+import threading
 import time
 import xml.sax.saxutils as sx
 
@@ -10,6 +12,14 @@ from ..services import ffmpegtool, mpv, organize as organizer, subtitles, thumbs
 
 PLAYABLE = {".mp4": "video/mp4", ".webm": "video/webm", ".m4v": "video/mp4",
             ".mkv": "video/x-matroska", ".ts": "video/mp2t", ".mov": "video/quicktime"}
+
+# 浏览器（Chrome/Edge/Firefox/Safari 主流版本）原生可解码的编码
+_PLAY_OK_VCODEC = {"h264", "vp8", "vp9", "av1"}
+_PLAY_OK_ACODEC = {"aac", "mp3", "opus", "vorbis", "flac"}
+
+# 活跃转码进程：同一视频重新拉流（如拖动进度）时先杀旧进程，防僵尸堆积
+_active_transcodes: dict[int, subprocess.Popen] = {}
+_trans_lock = threading.Lock()
 
 
 def _get_video(vid: int) -> dict:
@@ -44,7 +54,8 @@ def list_videos(req):
         vals.append(tag)
     if ext := q.get("ext"):
         where.append("v.ext=?")
-        vals.append(ext.lower())
+        # 入库的 ext 带点（scanner 存 ".mp4"），下拉值无点，统一归一化为带点比较
+        vals.append("." + ext.lstrip(".").lower())
 
     seed = 0
     if q.get("sort") == "random":
@@ -164,6 +175,130 @@ def stream_video(req):
     return resp
 
 
+def _needs_transcode(v: dict) -> tuple[bool, bool, dict]:
+    """判定视频/音频编码是否浏览器可直播，返回 (v_ok, a_ok, probe信息)。probe 失败按可直播兜底。
+
+    注意：判定基于编码而非扩展名——.mp4 容器装 HEVC/MPEG4 同样需要转码，
+    反之 .avi/.ts 里的 H.264 视频流可 copy（只转音频/封装）。
+    H.264 需 8bit 4:2:0（yuv420p）——10bit（yuv420p10le，动画常见）浏览器普遍不支持。
+    例外：容器为 MPEG-TS 的文件（含 .mp4 扩展名的"假 MP4"，下载站常见）——
+    Chrome <video> 无法解复用 TS（直连必失败），且 TS→fMP4 封装拷贝会报
+    "Error muxing a packet" 秒退（输出仅零点几秒），必须强制重编码视频流。
+    """
+    info = ffmpegtool.ffprobe_info(v["path"])
+    vc = info.get("codec", "")
+    if not vc and not info.get("acodec"):
+        return True, True, info
+    v_ok = vc in _PLAY_OK_VCODEC
+    if v_ok and vc == "h264" and info.get("pix_fmt", "yuv420p") not in ("yuv420p", "yuvj420p"):
+        v_ok = False
+    if v_ok and "mpegts" in (info.get("format") or ""):
+        v_ok = False  # TS 容器：直连与封装拷贝均不可行，走重编码
+    return v_ok, info.get("acodec", "") in _PLAY_OK_ACODEC, info
+
+
+@router.get("/videos/{vid}/playinfo")
+def playinfo(req):
+    """播放方式判定：direct 原文件直出 / transcode 服务端 ffmpeg 转码为 fMP4。"""
+    vid = int(req.params["vid"])
+    v = _get_video(vid)
+    if not os.path.isfile(v["path"]):
+        raise ApiError(410, "文件不存在，请重新扫描")
+    ff = bool(ffmpegtool.detect_ffmpeg())
+    v_ok, a_ok, info = _needs_transcode(v)
+    mode = "direct" if (v_ok and a_ok) else ("transcode" if ff else "direct")
+    return json_ok({
+        "mode": mode,
+        "ffmpeg": ff,
+        "vcodec": info.get("codec", ""), "acodec": info.get("acodec", ""),
+        "pix_fmt": info.get("pix_fmt", ""), "profile": info.get("profile", ""),
+        "duration": info.get("duration", 0),
+        "v_transcode": not v_ok, "a_transcode": not a_ok,
+    })
+
+
+def _popen_chunks(proc: subprocess.Popen, size: int = 256 * 1024):
+    """持续读取子进程 stdout，直到流结束；退出时确保进程被终止。"""
+    try:
+        while True:
+            chunk = proc.stdout.read(size)
+            if not chunk:
+                break
+            yield chunk
+    finally:
+        if proc.poll() is None:
+            try:
+                proc.kill()
+            except OSError:
+                pass
+
+
+@router.get("/videos/{vid}/transcode")
+def transcode_stream(req):
+    """实时转码流：ffmpeg 输出 fMP4（fragmented MP4）直接喂给 <video>，浏览器无需外部播放器。
+
+    视频编码兼容时仅 copy（近零开销），不兼容（H.265/HEVC、WMV 等）时软编 H.264；
+    音频同理（AC3/DTS 等 → AAC）。拖动进度通过 ?start= 秒 重启转码实现。
+    """
+    vid = int(req.params["vid"])
+    v = _get_video(vid)
+    path = v["path"]
+    if not os.path.isfile(path):
+        raise ApiError(410, "文件不存在，请重新扫描")
+    if not ffmpegtool.detect_ffmpeg():
+        raise ApiError(400, "ffmpeg 不可用，无法网页转码（可在设置中配置或自动下载）")
+    try:
+        start = max(0.0, float(req.query.get("start", "0") or 0))
+    except ValueError:
+        start = 0.0
+    v_ok, a_ok, _info = _needs_transcode(v)
+    args = ["-ss", f"{start:.3f}", "-i", path, "-map", "0:v:0", "-map", "0:a:0?"]
+    if v_ok:
+        args += ["-c:v", "copy"]
+    else:
+        args += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+                 "-pix_fmt", "yuv420p", "-threads", "0"]
+    if a_ok:
+        args += ["-c:a", "copy"]
+        # TS 容器（含 .mp4 扩展名的假 MP4）里的 AAC 是 ADTS 流，拷贝进 MP4 需转 ASC，
+        # 否则报 "Malformed AAC bitstream detected" 秒退
+        if "mpegts" in (_info.get("format") or ""):
+            args += ["-bsf:a", "aac_adtstoasc"]
+    else:
+        args += ["-c:a", "aac", "-b:a", "160k", "-ac", "2"]
+    args += ["-avoid_negative_ts", "make_zero",
+             "-movflags", "+frag_keyframe+empty_moov+default_base_moof",
+             "-f", "mp4", "pipe:1"]
+    proc = ffmpegtool.spawn_ffmpeg(args)
+    if not proc:
+        raise ApiError(500, "ffmpeg 进程启动失败")
+    with _trans_lock:
+        old = _active_transcodes.pop(vid, None)
+        if old and old.poll() is None:
+            try:
+                old.kill()
+            except OSError:
+                pass
+        _active_transcodes[vid] = proc
+
+    def cleanup():
+        with _trans_lock:
+            if _active_transcodes.get(vid) is proc:
+                _active_transcodes.pop(vid, None)
+        if proc.poll() is None:
+            try:
+                proc.kill()
+            except OSError:
+                pass
+
+    util.logger().info("转码播放 #%s %s v=%s a=%s start=%.1f", vid, v["filename"],
+                       "copy" if v_ok else "encode", "copy" if a_ok else "encode", start)
+    resp = Response(200, b"", "video/mp4", {"Cache-Control": "no-store"})
+    resp.pipe_iter = _popen_chunks(proc)
+    resp.on_close = cleanup
+    return resp
+
+
 @router.get("/videos/{vid}/thumbnail")
 def thumbnail(req):
     vid = int(req.params["vid"])
@@ -250,6 +385,9 @@ def progress(req):
 
 @router.post("/videos/{vid}/mpv")
 def play_mpv(req):
+    if not req.is_localhost():
+        # mpv 是唤起服务器本机的外部程序，远端触发会在服务器屏幕上弹窗口，故仅限本机
+        raise ApiError(403, "mpv 播放仅限在服务器本机打开的网页中使用")
     vid = int(req.params["vid"])
     v = _get_video(vid)
     pos = float(req.json.get("position", v["resume_position"] or 0))

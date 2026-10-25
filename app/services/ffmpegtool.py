@@ -71,8 +71,18 @@ def detect_mpv() -> str | None:
     return _which(cands)
 
 
+_probe_cache: dict[str, tuple[float, dict]] = {}
+
+
 def ffprobe_info(path: str) -> dict:
-    """调用 ffprobe 获取视频时长/分辨率/编码信息，失败返回 {}。"""
+    """调用 ffprobe 获取视频时长/分辨率/音视频编码信息，失败返回 {}（按 mtime 缓存）。"""
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = 0.0
+    hit = _probe_cache.get(path)
+    if hit and hit[0] == mtime:
+        return hit[1]
     ff = detect_ffprobe()
     if not ff:
         return {}
@@ -89,14 +99,48 @@ def ffprobe_info(path: str) -> dict:
     info = {
         "duration": float(fmt.get("duration") or 0),
         "bitrate": int(fmt.get("bit_rate") or 0),
-        "width": 0, "height": 0, "codec": "",
+        "format": fmt.get("format_name") or "",
+        "width": 0, "height": 0, "codec": "", "acodec": "",
+        "pix_fmt": "", "profile": "",
     }
+    # 主视频流：跳过封面图流（attached_pic），default 优先，否则取时长最长者
+    vstreams = [s for s in data.get("streams", [])
+                if s.get("codec_type") == "video" and not s.get("disposition", {}).get("attached_pic")]
+    main = None
+    for s in vstreams:
+        if s.get("disposition", {}).get("default"):
+            main = s
+            break
+    if main is None and vstreams:
+        main = max(vstreams, key=lambda s: float(s.get("duration") or 0))
+    if main:
+        info["width"] = int(main.get("width") or 0)
+        info["height"] = int(main.get("height") or 0)
+        info["codec"] = main.get("codec_name") or ""
+        info["pix_fmt"] = main.get("pix_fmt") or ""
+        info["profile"] = main.get("profile") or ""
     for st in data.get("streams", []):
-        if st.get("codec_type") == "video" and not info["width"]:
-            info["width"] = int(st.get("width") or 0)
-            info["height"] = int(st.get("height") or 0)
-            info["codec"] = st.get("codec_name") or ""
+        if st.get("codec_type") == "audio" and not info["acodec"]:
+            info["acodec"] = st.get("codec_name") or ""
+    if info["codec"] or info["duration"]:
+        if len(_probe_cache) > 512:
+            _probe_cache.clear()
+        _probe_cache[path] = (mtime, info)
     return info
+
+
+def spawn_ffmpeg(args: list[str]) -> subprocess.Popen | None:
+    """启动长驻 ffmpeg 子进程（stdout 管道输出），供实时流读取；失败返回 None。"""
+    p = detect_ffmpeg()
+    if not p:
+        return None
+    try:
+        return subprocess.Popen(
+            [p, "-hide_banner", "-loglevel", "error", *args],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+    except OSError:
+        return None
 
 
 def ffmpeg_status() -> dict:

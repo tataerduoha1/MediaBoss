@@ -1,19 +1,19 @@
 /** 应用入口：hash 路由 + 布局 + 启动引导。 */
-import { api } from "./api.js?v=6";
-import { h, toast, modal, applyTheme, applyAccent, applyWallpaper, applyLang, t, debounce } from "./util.js?v=6";
-import { openUpdateDialog } from "./update.js?v=6";
-import * as Login from "./pages/login.js?v=6";
-import * as Dashboard from "./pages/dashboard.js?v=6";
-import * as Videos from "./pages/videos.js?v=6";
-import * as Jav from "./pages/jav.js?v=6";
-import * as Entities from "./pages/entities.js?v=6";
-import * as Player from "./pages/player.js?v=6";
-import * as History from "./pages/history.js?v=6";
-import * as Downloads from "./pages/downloads.js?v=6";
-import * as Collections from "./pages/collections.js?v=6";
-import * as Insights from "./pages/insights.js?v=6";
-import * as Tools from "./pages/tools.js?v=6";
-import * as Settings from "./pages/settings.js?v=6";
+import { api } from "./api.js?v=17";
+import { h, toast, modal, applyTheme, applyAccent, applyWallpaper, applyLang, t, debounce } from "./util.js?v=17";
+import { openUpdateDialog } from "./update.js?v=17";
+import * as Login from "./pages/login.js?v=17";
+import * as Dashboard from "./pages/dashboard.js?v=17";
+import * as Videos from "./pages/videos.js?v=17";
+import * as Jav from "./pages/jav.js?v=17";
+import * as Entities from "./pages/entities.js?v=17";
+import * as Player from "./pages/player.js?v=17";
+import * as History from "./pages/history.js?v=17";
+import * as Downloads from "./pages/downloads.js?v=17";
+import * as Collections from "./pages/collections.js?v=17";
+import * as Insights from "./pages/insights.js?v=17";
+import * as Tools from "./pages/tools.js?v=17";
+import * as Settings from "./pages/settings.js?v=17";
 
 window.__BOOT_OK = "static-ok"; // 诊断标记：模块图加载成功即设置
 
@@ -112,11 +112,21 @@ function buildLayout() {
     diceBtn.disabled = false;
   });
 
-  const burger = h("button", { class: "burger", onclick: () => sidebar.classList.toggle("open") }, "☰");
+  // 侧边栏开合：移动端走抽屉(open + 遮罩，点侧栏外任意处收起)，桌面走折叠(side-collapsed)
+  const setSide = (open) => {
+    sidebar.classList.toggle("open", open);
+    scrim.style.display = open ? "" : "none";
+  };
+  const burger = h("button", { class: "burger", title: "折叠 / 展开导航栏" }, "☰");
+  burger.addEventListener("click", () => {
+    const lay = burger.closest(".layout");
+    if (window.matchMedia("(max-width: 860px)").matches) setSide(!sidebar.classList.contains("open"));
+    else lay?.classList.toggle("side-collapsed");
+  });
   const scrim = h("div", { class: "scrim", style: "display:none" });
-  scrim.addEventListener("click", () => { sidebar.classList.remove("open"); scrim.style.display = "none"; });
+  scrim.addEventListener("click", () => setSide(false));
   sidebar.addEventListener("click", (e) => {
-    if (e.target.closest("a")) { sidebar.classList.remove("open"); scrim.style.display = "none"; }
+    if (e.target.closest("a")) setSide(false);
   });
 
   const logout = h("button", { class: "btn ghost sm", title: "退出登录" }, h("span", { "data-i18n": "act.logout" }, t("act.logout")));
@@ -255,7 +265,8 @@ async function route() {
       app.innerHTML = "";
       layoutEl = buildLayout();
       app.append(layoutEl.layout);
-      taskTimer = setInterval(() => refreshTaskPill(layoutEl.pill), 6000);
+      if (taskTimer) clearInterval(taskTimer); // 防重复定时器
+      taskTimer = setInterval(() => { if (layoutEl) refreshTaskPill(layoutEl.pill); }, 6000); // 裸路由（播放页）时 layoutEl 为 null，需跳过
       refreshTaskPill(layoutEl.pill);
     }
     // 高亮导航

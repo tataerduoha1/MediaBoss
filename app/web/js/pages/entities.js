@@ -1,7 +1,7 @@
 /** 实体页：女优 / 厂商 / 系列 / 类别 */
-import { api } from "../api.js?v=6";
-import { h, debounce } from "../util.js?v=6";
-import { entityCard, skeletonGrid, emptyState } from "../components.js?v=6";
+import { api } from "../api.js?v=17";
+import { h, debounce } from "../util.js?v=17";
+import { entityCard, skeletonGrid, emptyState } from "../components.js?v=17";
 
 const CONF = {
   actresses: { title: "女优", icon: "👩", avatar: true, param: "actress_id" },
