@@ -4,7 +4,7 @@ import sys
 import tomllib
 
 APP_NAME = "MediaBoss"
-VERSION = "1.4.1"
+VERSION = "1.5.0"
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

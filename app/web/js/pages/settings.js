@@ -1,6 +1,6 @@
 /** 设置页：媒体目录 / 扫描 / 刮削 / 播放器 / 界面 / 数据管理 / CD2 下载 / 整理 / 安全 / 关于 */
-import { api } from "../api.js?v=17";
-import { h, toast, confirmModal, modal, fmtSize, applyTheme, applyAccent, applyWallpaper, applyLang } from "../util.js?v=17";
+import { api } from "../api.js?v=22";
+import { h, toast, confirmModal, modal, fmtSize, applyTheme, applyAccent, applyWallpaper, applyLang } from "../util.js?v=22";
 
 export async function render(view) {
   document.title = "设置 · MediaBoss";
@@ -362,7 +362,8 @@ export async function render(view) {
       setRow("JAV 模式", "全局默认按番号识别文件", toggle("jav_mode"))),
     group("💋", "刮削",
       setRow("启用刮削", "", toggle("scrape_enabled")),
-      setRow("数据源顺序", "逗号分隔：javbus,javdb", txt("scrape_provider_order")),
+      setRow("数据源顺序", "逗号分隔，可用：javbus,javdb,javlib,dmm,fc2,missav", txt("scrape_provider_order")),
+      setRow("源域名列表", "一个框管所有源。格式：javbus=镜像域名,dmm=镜像域名；源名：javbus/javdb/javlib/dmm/fc2/missav，留空用默认", txt("scrape_domains")),
       setRow("标题翻译", "使用 Google 翻译接口", toggle("translate_enabled")),
       setRow("网络代理", "如 http://127.0.0.1:7890，留空不使用", txt("proxy", "http://127.0.0.1:7890"))),
     group("🎬", "播放器与缩略图",
@@ -377,7 +378,7 @@ export async function render(view) {
       setRow("壁纸", "背景图片 URL，界面面板自动半透明", wpInput, wpClear),
       setRow("语言 Language", "界面语言（基础翻译）", langSel),
       setRow("每页数量", "", num("page_size")),
-      setRow("隐藏已看完", "视频库默认过滤已看完", toggle("hide_watched"))),
+      setRow("缩略图", "", toggle("sprite_enabled"))),
     group("🗄", "数据管理",
       h("p", { style: "color:var(--faint);font-size:12.5px;margin:0 0 12px" },
         "数据分三类：长期（数据库/截图/工具，删除不可恢复）、缓存（封面/缩略图/雪碧图，可自动重建）、临时（日志/缓存，随时可清）。"),
@@ -390,10 +391,6 @@ export async function render(view) {
         restoreInput,
         h("span", { style: "align-self:center;font-size:12px;color:var(--faint)" },
           "备份包含完整数据库 + 封面 / 自定义海报，恢复将覆盖现有数据"))),
-    group("⬇️", "CD2 下载",
-      setRow("CloudDrive2", "API 地址，如 http://127.0.0.1:19798", txt("cd2_url")),
-      setRow("用户名 / 密码", "", txt("cd2_user"), txt("cd2_pass")),
-      setRow("下载目录", "任务保存路径", txt("download_dir"))),
     group("🗂", "文件整理",
       setRow("命名模板", "可用 {code} {title} {ext}", txt("organize_template")),
       setRow("说明", "", h("span", { style: "color:var(--faint);font-size:12.5px" },

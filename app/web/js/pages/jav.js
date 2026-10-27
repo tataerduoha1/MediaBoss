@@ -1,7 +1,7 @@
 /** JAV 库：封面墙 + 多维筛选（女优/厂商/系列/类别）+ 列表与详情 */
-import { api } from "../api.js?v=17";
-import { h, debounce, toast, confirmModal, promptModal, modal, fmtDur, fmtSize, fmtAgo, stars, lazyimg, pageMem, isLocal } from "../util.js?v=17";
-import { javCard, pager, skeletonGrid, emptyState, ratingStars, favBtn } from "../components.js?v=17";
+import { api } from "../api.js?v=22";
+import { h, debounce, toast, confirmModal, promptModal, modal, fmtDur, fmtSize, fmtAgo, stars, lazyimg, pageMem, isLocal } from "../util.js?v=22";
+import { javCard, pager, skeletonGrid, emptyState, ratingStars, favBtn } from "../components.js?v=22";
 
 export async function render(view, params, query) {
   document.title = "JAV 库 · MediaBoss";

@@ -1,6 +1,6 @@
 /** 播放器：自定义控制栏、雪碧图悬停预览、进度记忆、智能转码（不兼容编码网页直播）、截图、触屏与快捷键。 */
-import { api } from "../api.js?v=17";
-import { h, toast, fmtDur, modal, isLocal } from "../util.js?v=17";
+import { api } from "../api.js?v=22";
+import { h, toast, fmtDur, modal, isLocal } from "../util.js?v=22";
 
 export async function render(root, params) {
   const vid = params[1];

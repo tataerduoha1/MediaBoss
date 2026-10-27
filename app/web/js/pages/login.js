@@ -1,6 +1,6 @@
 /** 登录页 */
-import { api } from "../api.js?v=17";
-import { h } from "../util.js?v=17";
+import { api } from "../api.js?v=22";
+import { h } from "../util.js?v=22";
 
 export async function render(root) {
   document.title = "登录 · MediaBoss";

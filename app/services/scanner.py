@@ -143,7 +143,7 @@ def _scan() -> dict:
     added = removed = 0
 
     # 入库 / 更新 / 识别移动
-    by_path = {r["path"]: r for r in d.query("SELECT id, path, size, mtime, fingerprint FROM videos")}
+    by_path = {r["path"]: r for r in d.query("SELECT id, path, dir_id, size, mtime, fingerprint FROM videos")}
     by_fp = {r["fingerprint"]: r for r in d.query("SELECT id, path, size, fingerprint FROM videos")}
     known_paths = set(by_path)
 
@@ -156,28 +156,46 @@ def _scan() -> dict:
                     "UPDATE videos SET size=?, mtime=?, fingerprint=?, updated_at=? WHERE id=?",
                     (meta["size"], meta["mtime"], fp, time.time(), row["id"]))
             continue
-        # 新路径：先看指纹是否命中（移动/重命名场景）
+        # 新路径：先看指纹是否命中（移动/重命名场景）。
+        # 原记录的路径仍在盘上时不是移动，而是同内容的多份拷贝，应各自独立入库。
         fp = fingerprint(path, meta["size"])
         moved = by_fp.get(fp)
+        if moved and moved["path"] in disk_files:
+            moved = None
         now = time.time()
         if moved:
-            d.execute("UPDATE videos SET path=?, dir_id=?, size=?, mtime=?, updated_at=? WHERE id=?",
-                      (path, meta["dir_id"], meta["size"], meta["mtime"], now, moved["id"]))
-            # 清理缩略图缓存键不变（按 video id），无需重建
+            # 改名/移动：路径与文件名相关字段同步为新名，否则搜索仍命中旧标题
+            filename = os.path.basename(path)
+            d.execute("UPDATE videos SET path=?, dir_id=?, size=?, mtime=?, filename=?, ext=?, title=?,"
+                      " updated_at=? WHERE id=?",
+                      (path, meta["dir_id"], meta["size"], meta["mtime"], filename,
+                       os.path.splitext(filename)[1].lower(), os.path.splitext(filename)[0],
+                       now, moved["id"]))
+            by_fp[moved["fingerprint"]] = {"id": moved["id"], "path": path,
+                                           "fingerprint": moved["fingerprint"]}
         else:
             filename = os.path.basename(path)
             ext = os.path.splitext(filename)[1].lower()
+            # 指纹列 UNIQUE：同内容多份拷贝加序号后缀（重复检测按番号/大小+时长，不受影响）
+            fp_final, n = fp, 0
+            while fp_final in by_fp:
+                n += 1
+                fp_final = f"{fp}#{n}"
             cur = d.execute(
                 "INSERT INTO videos(fingerprint, path, dir_id, filename, ext, size, mtime, title,"
                 " created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                (fp, path, meta["dir_id"], filename, ext, meta["size"], meta["mtime"],
+                (fp_final, path, meta["dir_id"], filename, ext, meta["size"], meta["mtime"],
                  os.path.splitext(filename)[0], now, now))
+            by_fp[fp_final] = {"id": cur.lastrowid, "path": path, "fingerprint": fp_final}
             vid = cur.lastrowid
             added += 1
             _after_insert(vid, path, meta["size"])
 
-    # 删除已不存在的文件记录
+    # 删除已不存在的文件记录（禁用目录的记录保留，重新启用后原样恢复，封面与刮削数据不丢）
+    disabled_dirs = {r["id"] for r in d.query("SELECT id FROM directories WHERE enabled=0")}
     for path in known_paths - set(disk_files):
+        if by_path[path]["dir_id"] in disabled_dirs:
+            continue
         d.execute("DELETE FROM videos WHERE path=?", (path,))
         removed += 1
 

@@ -1,7 +1,7 @@
 /** 工具箱（A5 重复检测 / A7 存储分析+缓存清理 / A6 NFO 批量导出）。 */
-import { api } from "../api.js?v=17";
-import { h, toast, confirmModal, fmtSize, fmtDur, fmtAgo } from "../util.js?v=17";
-import { emptyState } from "../components.js?v=17";
+import { api } from "../api.js?v=22";
+import { h, toast, confirmModal, fmtSize, fmtDur, fmtAgo } from "../util.js?v=22";
+import { emptyState } from "../components.js?v=22";
 
 export async function render(view) {
   document.title = "工具箱 · MediaBoss";

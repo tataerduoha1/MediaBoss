@@ -11,8 +11,16 @@ from .. import javcode
 from .base import Metadata, Provider
 from .javbus import JavBusProvider
 from .javdb import JavDBProvider
+from .javlib import JavLibProvider
+from .dmm import DmmProvider
+from .fc2ppv import Fc2PpvProvider
+from .missav import MissAvProvider
 
-PROVIDERS = {"javbus": JavBusProvider, "javdb": JavDBProvider}
+PROVIDERS = {
+    "javbus": JavBusProvider, "javdb": JavDBProvider,
+    "javlib": JavLibProvider, "dmm": DmmProvider,
+    "fc2": Fc2PpvProvider, "missav": MissAvProvider,
+}
 
 _started = False
 _q: queue.Queue = queue.Queue()
@@ -251,13 +259,15 @@ def _translate_worker():
 
 
 def _make_providers() -> list[Provider]:
-    order = [p.strip() for p in db.get_setting("scrape_provider_order", "javbus,javdb").split(",") if p.strip()]
+    order = [p.strip().lower() for p in db.get_setting("scrape_provider_order", "javbus,javdb").split(",") if p.strip()]
     proxy = db.get_setting("proxy")
     out = []
     for name in order:
         cls = PROVIDERS.get(name)
         if cls:
             out.append(cls(proxy=proxy))
+        else:
+            util.logger().warning("数据源顺序里有无效源名，已跳过: %s", name)
     return out
 
 
@@ -301,6 +311,8 @@ def _process(video_id: int):
         for p in _make_providers():
             md = p.lookup(code)
             if md:
+                # 命中日志：让"用了哪个源"在日志里可见（不打印番号/标题）
+                util.logger().info("刮削命中 via %s（video=%d）", p.name, video_id)
                 break
     finally:
         with _scraping_lock:

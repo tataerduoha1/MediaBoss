@@ -3,7 +3,7 @@ import re
 import urllib.parse
 
 from ... import util
-from .base import Metadata, Provider
+from .base import Metadata, Provider, base_of
 
 LABELS = {
     "id": r"识别码|識別碼|ID",
@@ -26,13 +26,15 @@ class JavBusProvider(Provider):
     base = "https://www.javbus.com"
 
     def lookup(self, code: str) -> Metadata | None:
-        html = self._fetch(f"{self.base}/{code}")
+        # 域名可配置（设置项 javbus_base 或「源域名列表」）：站点换镜像域名是常态，留空用默认
+        base = base_of("javbus", self.base)
+        html = self._fetch(f"{base}/{code}")
         if html and (f">{code}<" in html.upper() or code.upper() in html.upper()[:4000]):
             md = self.parse_detail(html, code)
             if md and md.title:
                 return md
         # 搜索页兜底
-        html = self._fetch(f"{self.base}/search/{code}&type=1&parent=ce")
+        html = self._fetch(f"{base}/search/{code}&type=1&parent=ce")
         if not html:
             return None
         m = re.search(r'<a class="movie-box" href="([^"]+/([A-Z0-9\-]+))"[\s\S]{0,400}?</a>', html)

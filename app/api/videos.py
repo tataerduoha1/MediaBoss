@@ -32,7 +32,8 @@ def _get_video(vid: int) -> dict:
 @router.get("/videos")
 def list_videos(req):
     q = req.query
-    where, vals = ["1=1"], []
+    # 排除已禁用目录的记录（数据保留，仅不在库中展示）
+    where, vals = ["v.dir_id NOT IN (SELECT id FROM directories WHERE enabled=0)"], []
     if kw := q.get("q", "").strip():
         where.append("(v.title LIKE ? OR v.filename LIKE ? OR j.code LIKE ? OR j.title LIKE ? OR j.cn_title LIKE ?)")
         like = f"%{kw}%"
@@ -95,7 +96,7 @@ def list_videos(req):
 @router.get("/videos/random-one")
 def random_one(req):
     """幸运骰子：随机挑一部（B3）。可带 watched=0 过滤只看未看。"""
-    where, vals = ["1=1"], []
+    where, vals = ["v.dir_id NOT IN (SELECT id FROM directories WHERE enabled=0)"], []
     if req.query.get("watched") == "0":
         where.append("v.watched=0")
     base = "FROM videos v LEFT JOIN jav j ON j.video_id=v.id WHERE " + " AND ".join(where)

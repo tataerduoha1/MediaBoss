@@ -10,9 +10,11 @@ from ..services import thumbs
 
 SAFE_KEYS = {
     "scan_interval_min", "auto_scan", "jav_mode", "scrape_enabled",
-    "scrape_provider_order", "translate_enabled", "proxy", "ffmpeg_path", "mpv_path",
-    "thumb_workers", "sprite_enabled", "lan_access", "cd2_url", "cd2_user", "cd2_pass",
-    "download_dir", "organize_template", "hide_watched", "page_size",
+    "scrape_provider_order", "scrape_domains",
+    "javbus_base", "javdb_base", "javlib_base", "dmm_base", "fc2_base", "missav_base",
+    "translate_enabled", "proxy", "ffmpeg_path", "mpv_path",
+    "thumb_workers", "sprite_enabled", "lan_access",
+    "download_dir", "organize_template", "page_size",
     "scrape_retry_cooldown_min", "theme", "accent_color", "wallpaper", "lang",
 }
 

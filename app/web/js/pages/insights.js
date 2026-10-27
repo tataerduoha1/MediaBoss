@@ -1,7 +1,7 @@
 /** 观影统计（B1 年度报告 / B2 热力日历 / B5 女优合作网络）。 */
-import { api } from "../api.js?v=17";
-import { h, fmtDur } from "../util.js?v=17";
-import { emptyState } from "../components.js?v=17";
+import { api } from "../api.js?v=22";
+import { h, fmtDur } from "../util.js?v=22";
+import { emptyState } from "../components.js?v=22";
 
 export async function render(view, params, query) {
   document.title = "观影统计 · MediaBoss";

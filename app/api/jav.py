@@ -83,7 +83,8 @@ def list_jav(req):
     page_size = min(200, max(10, int(q.get("page_size", db.get_setting("page_size", "60")))))
     offset = (page - 1) * page_size
 
-    base = ("FROM jav j JOIN videos v ON v.id=j.video_id WHERE " + " AND ".join(where))
+    base = ("FROM jav j JOIN videos v ON v.id=j.video_id WHERE"
+            " v.dir_id NOT IN (SELECT id FROM directories WHERE enabled=0) AND " + " AND ".join(where))
     d = db.db()
     total = d.scalar(f"SELECT COUNT(*) {base}", vals)
     rows = d.query(

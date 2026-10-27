@@ -26,7 +26,7 @@
   }
 }catch(e){}})();
 </script>
-<link rel="stylesheet" href="/css/app.css?v=17">
+<link rel="stylesheet" href="/css/app.css?v=22">
 </head>
 <body>
 <div id="app"></div>
@@ -46,7 +46,7 @@ if("serviceWorker" in navigator && (location.protocol==="https:" || ["localhost"
 <script type="module">
 /* 自愈引导：浏览器残留旧缓存导致模块图加载失败时，自动强刷一次；再失败则给出自救提示 */
 try {
-  await import("/js/app.js?v=17");
+  await import("/js/app.js?v=22");
 } catch (e) {
   if (!sessionStorage.getItem("mb_boot_reload")) {
     sessionStorage.setItem("mb_boot_reload", "1");

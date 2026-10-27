@@ -1,19 +1,18 @@
 /** 应用入口：hash 路由 + 布局 + 启动引导。 */
-import { api } from "./api.js?v=17";
-import { h, toast, modal, applyTheme, applyAccent, applyWallpaper, applyLang, t, debounce } from "./util.js?v=17";
-import { openUpdateDialog } from "./update.js?v=17";
-import * as Login from "./pages/login.js?v=17";
-import * as Dashboard from "./pages/dashboard.js?v=17";
-import * as Videos from "./pages/videos.js?v=17";
-import * as Jav from "./pages/jav.js?v=17";
-import * as Entities from "./pages/entities.js?v=17";
-import * as Player from "./pages/player.js?v=17";
-import * as History from "./pages/history.js?v=17";
-import * as Downloads from "./pages/downloads.js?v=17";
-import * as Collections from "./pages/collections.js?v=17";
-import * as Insights from "./pages/insights.js?v=17";
-import * as Tools from "./pages/tools.js?v=17";
-import * as Settings from "./pages/settings.js?v=17";
+import { api } from "./api.js?v=22";
+import { h, toast, modal, applyTheme, applyAccent, applyWallpaper, applyLang, t, debounce } from "./util.js?v=22";
+import { openUpdateDialog } from "./update.js?v=22";
+import * as Login from "./pages/login.js?v=22";
+import * as Dashboard from "./pages/dashboard.js?v=22";
+import * as Videos from "./pages/videos.js?v=22";
+import * as Jav from "./pages/jav.js?v=22";
+import * as Entities from "./pages/entities.js?v=22";
+import * as Player from "./pages/player.js?v=22";
+import * as History from "./pages/history.js?v=22";
+import * as Collections from "./pages/collections.js?v=22";
+import * as Insights from "./pages/insights.js?v=22";
+import * as Tools from "./pages/tools.js?v=22";
+import * as Settings from "./pages/settings.js?v=22";
 
 window.__BOOT_OK = "static-ok"; // 诊断标记：模块图加载成功即设置
 
@@ -32,7 +31,6 @@ const ROUTES = [
   { re: /^\/insights$/, mod: Insights, title: "观影统计" },
   { re: /^\/tools$/, mod: Tools, title: "工具箱" },
   { re: /^\/history$/, mod: History, title: "观看历史" },
-  { re: /^\/downloads$/, mod: Downloads, title: "下载" },
   { re: /^\/settings$/, mod: Settings, title: "设置" },
 ];
 
@@ -72,7 +70,6 @@ function buildLayout() {
       navItem("#/insights", "nav.insights", "📈"),
       navItem("#/tools", "nav.tools", "🧰"),
       navItem("#/history", "nav.history", "🕘"),
-      navItem("#/downloads", "nav.downloads", "⬇️"),
       navItem("#/settings", "nav.settings", "⚙️"),
     ),
     h("div", { class: "foot" }, "MediaBoss · 本地媒体管家"),
@@ -171,7 +168,7 @@ function openPalette() {
     ["📚", "#/series", "nav.series"], ["🏷", "#/genres", "nav.genres"],
     ["📋", "#/collections", "nav.collections"], ["📈", "#/insights", "nav.insights"],
     ["🧰", "#/tools", "nav.tools"], ["🕘", "#/history", "nav.history"],
-    ["⬇️", "#/downloads", "nav.downloads"], ["⚙️", "#/settings", "nav.settings"],
+    ["⚙️", "#/settings", "nav.settings"],
   ];
   const staticItems = pages.map(([icon, to, key]) => ({ icon, to, label: t(key) }));
   modal((box, close) => {

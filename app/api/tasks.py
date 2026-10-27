@@ -3,7 +3,7 @@ import time
 
 from .. import db, util
 from ..httpd import json_ok, router
-from ..services import downloads, scanner, scraper, thumbs
+from ..services import scanner, scraper, thumbs
 
 
 @router.get("/tasks/status")
@@ -12,7 +12,6 @@ def task_status(req):
         "scan": scanner.status(),
         "scrape": scraper.status(),
         "thumb_queue": thumbs.queue_size(),
-        "download": downloads.status(),
     })
 
 

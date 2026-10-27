@@ -34,12 +34,11 @@ def main():
     _auth._ensure_password()
 
     # 后台服务
-    from app.services import downloads, scanner, scraper, thumbs
+    from app.services import scanner, scraper, thumbs
     thumbs.start()
     scanner.start()
     if db.get_setting("scrape_enabled", "1") == "1":
         scraper.start()
-    downloads.start()
 
     server = create_server()
     url = f"http://{'127.0.0.1' if cfg.host in ('0.0.0.0', '') else cfg.host}:{cfg.port}"

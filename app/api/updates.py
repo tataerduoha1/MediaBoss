@@ -1,6 +1,6 @@
 """更新任务 API：全量/增量更新、实时进度、取消。"""
 from ..httpd import ApiError, json_ok, router
-from ..services import downloads, scanner, scraper, thumbs
+from ..services import scanner, scraper, thumbs
 
 
 @router.post("/updates/start")
@@ -22,7 +22,6 @@ def progress(req):
         "update": scraper.progress(),
         "scan": scanner.status(),
         "thumb_queue": thumbs.queue_size(),
-        "download": downloads.status(),
     })
 
 

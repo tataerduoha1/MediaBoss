@@ -33,3 +33,17 @@ class Provider:
 
     def lookup(self, code: str) -> Metadata | None:  # pragma: no cover
         raise NotImplementedError
+
+
+def base_of(name: str, default: str) -> str:
+    """源域名统一解析：离散 {name}_base 设置 > scrape_domains 列表（name=domain 逗号分隔）> 默认。
+    兼容从聊天/文档复制粘贴带进来的 Markdown 反引号。"""
+    from ... import db
+    v = (db.get_setting(f"{name}_base", "") or "").strip().strip("`").strip().rstrip("/")
+    if v:
+        return v
+    for part in (db.get_setting("scrape_domains", "") or "").split(","):
+        k, _, val = part.partition("=")
+        if k.strip().strip("`") == name and val.strip():
+            return val.strip().strip("`").strip().rstrip("/")
+    return default

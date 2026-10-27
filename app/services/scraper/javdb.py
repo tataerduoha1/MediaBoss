@@ -3,7 +3,7 @@ import re
 import urllib.parse
 
 from ... import util
-from .base import Metadata, Provider
+from .base import Metadata, Provider, base_of
 
 
 class JavDBProvider(Provider):
@@ -11,7 +11,9 @@ class JavDBProvider(Provider):
     base = "https://javdb.com"
 
     def lookup(self, code: str) -> Metadata | None:
-        data = util.http_get(f"{self.base}/search?q={code}&f=all", timeout=15,
+        # 域名可配置（设置项 javdb_base 或「源域名列表」）：留空用默认
+        base = base_of("javdb", self.base)
+        data = util.http_get(f"{base}/search?q={code}&f=all", timeout=15,
                              proxy=self.proxy, retries=1,
                              headers={"Cookie": "locale=zh_CN"})
         if not data:
@@ -20,7 +22,7 @@ class JavDBProvider(Provider):
         m = re.search(r'<a class="box" href="(/v/[^"]+)"[\s\S]{0,600}?<strong[^>]*>\s*([A-Z0-9\-]+)\s*</strong>', html)
         if not m:
             return None
-        detail_url = self.base + m.group(1)
+        detail_url = base + m.group(1)
         data = util.http_get(detail_url, timeout=15, proxy=self.proxy, retries=1,
                              headers={"Cookie": "locale=zh_CN"})
         if not data:
@@ -33,7 +35,7 @@ class JavDBProvider(Provider):
         c = re.search(r'<img[^>]+class="video-cover"[^>]+src="([^"]+)"', html) or \
             re.search(r'<img[^>]+src="([^"]+)"[^>]+class="video-cover"', html)
         if c:
-            md.cover_url = urllib.parse.urljoin(self.base, c.group(1))
+            md.cover_url = urllib.parse.urljoin(base, c.group(1))
         panel = re.search(r'<nav class="panel[\s\S]*?</nav>', html)
         block = panel.group(0) if panel else html
 
